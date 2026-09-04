@@ -1,0 +1,6 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <appStarter id="splitBackend" implementation="com.intellij.remoteDev.backend.SplitBackendStarter" internal="true"/>
+    <platform.rpc.backend.remoteApiProvider implementation="com.intellij.remoteDev.backend.BackendSessionApiProvider"/>
+  </extensions>
+</idea-plugin>

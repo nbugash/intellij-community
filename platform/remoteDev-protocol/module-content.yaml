@@ -1,0 +1,3 @@
+- name: dist.all/lib/intellij.platform.remoteDev.protocol.jar
+  modules:
+  - name: intellij.platform.remoteDev.protocol

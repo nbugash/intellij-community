@@ -1,0 +1,12 @@
+<product-modules>
+  <!--
+    Declared directly rather than included from intellij.platform.frontend.main.
+    That module is an aggregator with no product-modules.xml of its own: Community carries no
+    frontend product descriptor, because upstream the JetBrains Client supplies one. An <include>
+    of it fails with MalformedRepositoryException. Listing the roots here needs no upstream change.
+  -->
+  <main-root-modules>
+    <module>intellij.platform.frontend.main</module>
+    <module>intellij.platform.remoteDev.frontend</module>
+  </main-root-modules>
+</product-modules>

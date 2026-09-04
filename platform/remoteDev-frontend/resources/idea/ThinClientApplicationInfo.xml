@@ -1,0 +1,9 @@
+<component xmlns="http://jetbrains.org/intellij/schema/application-info">
+  <version major="2026" minor="3" eap="true"/>
+  <!-- FR-002 forbids presenting this product as a JetBrains product. The vendor is the fork. -->
+  <company name="IntelliJ Community Remote Development" url="https://github.com/JetBrains/intellij-community"/>
+  <build number="RC-__BUILD__" date="__BUILD_DATE__"/>
+  <!-- 'script' must equal ProductProperties.baseFileName. -->
+  <names product="RemoteClient" fullname="Remote Development Client" script="remote-client"
+         motto="A thin client for a remote development host"/>
+</component>
