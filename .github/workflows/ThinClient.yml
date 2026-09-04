@@ -16,9 +16,9 @@ on:
         default: 'master'
         required: false
       target_os:
-        description: 'current, linux, windows, mac, or all'
+        description: 'Leave empty for Linux and macOS. Or one of: current, linux, mac, windows, all'
         type: string
-        default: 'linux'
+        default: ''
         required: false
   push:
     tags:
@@ -67,9 +67,16 @@ jobs:
           path: android
           ref: ${{ inputs.android_ref || 'master' }}
 
+      # With no target_os the build defaults to Linux and macOS. A Windows installer needs NSIS and
+      # a Windows launcher that this fork has never exercised, so it is opt in.
       - name: Build the thin client
         shell: bash
-        run: ./thin-client-installers.cmd -Dintellij.build.target.os=${{ inputs.target_os || 'linux' }}
+        run: |
+          if [ -n "${{ inputs.target_os }}" ]; then
+            ./thin-client-installers.cmd -Dintellij.build.target.os=${{ inputs.target_os }}
+          else
+            ./thin-client-installers.cmd
+          fi
 
       # thin-client-installers.cmd exits 0 even when the build fails. It did so on ten consecutive
       # failures during development. Without this step a broken build reports success and uploads

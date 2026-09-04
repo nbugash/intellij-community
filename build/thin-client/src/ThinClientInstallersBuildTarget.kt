@@ -1,9 +1,11 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.intellij.build.thinClient
 
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.intellij.build.BuildOptions
+import org.jetbrains.intellij.build.OsFamily
 import org.jetbrains.intellij.build.BuildPaths.Companion.COMMUNITY_ROOT
 import org.jetbrains.intellij.build.impl.buildDistributions
 import org.jetbrains.intellij.build.impl.createBuildContext
@@ -34,6 +36,12 @@ object ThinClientInstallersBuildTarget {
           // own. A frontend product cannot boot without a host.
           BuildOptions.PROVIDED_MODULES_LIST_STEP,
         )
+        // Default to Linux and macOS. BuildOptions defaults to every operating system, and a
+        // Windows installer needs NSIS plus a Windows launcher that this fork does not exercise.
+        // The standard property still wins, so -Dintellij.build.target.os=all behaves as usual.
+        if (System.getProperty(BuildOptions.TARGET_OS_PROPERTY).isNullOrEmpty()) {
+          targetOs = persistentListOf(OsFamily.LINUX, OsFamily.MACOS)
+        }
       }
       val context = createBuildContext(
         projectHome = COMMUNITY_ROOT.communityRoot,
