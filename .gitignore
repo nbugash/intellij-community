@@ -25,3 +25,6 @@ native/**/build/
 platform/build-scripts/licenses/gradlebuild/build
 stale_outputs_checked
 /android
+# IDE and Gradle build output
+bin/
+**/testData/**/build/
