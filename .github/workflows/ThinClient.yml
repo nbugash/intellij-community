@@ -1,0 +1,100 @@
+name: Remote Development Client
+
+# Builds the thin client installers.
+#
+# This workflow does not reuse .github/workflows/ide_build_and_upload.yml on purpose. That workflow
+# checks out JetBrains/android at ${{github.ref}}, which only resolves when this repository's branch
+# name also exists in that repository. A feature branch does not, so the checkout fails before any
+# build starts. Here the reference is an input, and it defaults to master.
+
+on:
+  workflow_dispatch:
+    inputs:
+      android_ref:
+        description: 'Branch of JetBrains/android to check out'
+        type: string
+        default: 'master'
+        required: false
+      target_os:
+        description: 'current, linux, windows, mac, or all'
+        type: string
+        default: 'linux'
+        required: false
+  push:
+    tags:
+      - 'remote-client/*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      # The IDE build needs far more disk and memory than a hosted runner offers by default. Both
+      # steps mirror .github/actions/build_ide, where they exist because the build hits exit 137.
+      - name: Free disk space
+        shell: bash
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/share/swift /usr/share/miniconda \
+            /usr/local/lib/android /usr/local/share/boost /usr/local/share/powershell \
+            /usr/local/share/chromium /usr/local/lib/node_modules /opt/ghc /opt/microsoft \
+            /opt/google /imagegeneration /var/cache/apt/archives \
+            /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby /opt/hostedtoolcache/PyPy \
+            /opt/hostedtoolcache/go /opt/hostedtoolcache/node
+          sudo apt-get -y clean
+          docker image prune --all --force || true
+          df -h /
+
+      - name: Expand swap
+        shell: bash
+        run: |
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile /swapfile
+          sudo fallocate -l 30G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          free -h
+
+      # intellij.gradle.analysis depends on intellij.android.gradle.dsl. Without this checkout the
+      # Bazel model generation stops with "Cannot resolve module intellij.android.gradle.dsl".
+      - name: Checkout JetBrains/android
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: JetBrains/android
+          path: android
+          ref: ${{ inputs.android_ref || 'master' }}
+
+      - name: Build the thin client
+        shell: bash
+        run: ./thin-client-installers.cmd -Dintellij.build.target.os=${{ inputs.target_os || 'linux' }}
+
+      # thin-client-installers.cmd exits 0 even when the build fails. It did so on ten consecutive
+      # failures during development. Without this step a broken build reports success and uploads
+      # nothing. Fail on an empty artifacts directory instead.
+      - name: Verify the build produced artifacts
+        shell: bash
+        run: |
+          dir="out/remote-client/artifacts"
+          if [ ! -d "$dir" ]; then
+            echo "::error::No artifacts directory at $dir. The build failed."
+            exit 1
+          fi
+          count=$(find "$dir" -maxdepth 1 -name 'remoteClient-*' ! -name '*.sha*' ! -name '*.json' | wc -l)
+          echo "Artifacts found: $count"
+          find "$dir" -maxdepth 1 -type f -printf '  %f (%s bytes)\n'
+          if [ "$count" -eq 0 ]; then
+            echo "::error::The artifacts directory holds no installer. The build failed silently."
+            exit 1
+          fi
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: remote-client-installers
+          if-no-files-found: 'error'
+          retention-days: 7
+          path: |
+            out/remote-client/artifacts/remoteClient-*

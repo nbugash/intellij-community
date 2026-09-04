@@ -56,6 +56,13 @@ class ThinClientProperties(communityHome: Path) : ProductProperties() {
     "remoteClient-$buildNumber"
 
   /**
+   * The default is the product's full name in lower case, which for this product carries spaces.
+   * A build writes to this directory and a continuous integration job globs inside it, so a space
+   * invites a quoting mistake in a shell step.
+   */
+  override fun getOutputDirectoryName(appInfo: ApplicationInfoProperties): String = "remote-client"
+
+  /**
    * The default selector is the product's full name plus the version, and this product's full name
    * carries spaces. A selector names the configuration and caches directory, so a space in it is
    * rejected. The name is compressed rather than the full name shortened, because the full name is
