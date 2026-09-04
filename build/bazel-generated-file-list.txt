@@ -219,6 +219,7 @@ build/deps
 build/launch
 build/tasks
 build/tests
+build/thin-client
 commandInterface
 community-resources
 community-resources/ide-customization
@@ -806,6 +807,7 @@ platform/ide-core
 platform/ide-core-impl
 platform/ide-core/plugins
 platform/ijent
+platform/ijent-agent
 platform/ijent/buildConstants
 platform/ijent/impl
 platform/ijent/testFramework
@@ -962,6 +964,10 @@ platform/remote-servers/target-integration-tests
 platform/remote-topics/backend
 platform/remote-topics/frontend
 platform/remote-topics/shared
+platform/remoteDev-backend
+platform/remoteDev-frontend
+platform/remoteDev-protocol
+platform/remoteDev-provisioning
 platform/remoteDev-util
 platform/runtime/loader
 platform/runtime/product

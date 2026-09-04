@@ -93,6 +93,9 @@ public final class WellKnownCommand {
     put("cwmHost", REMOTE_DEV_HOST);
     put("cwmHostNoLobby", REMOTE_DEV_HOST);
     put("remoteDevHost", REMOTE_DEV_HOST);
+    // Split-mode backend of the open remote development fork. Headless: it renders nothing and
+    // serves state to a thin client over the session protocol. See docs/fork-platform-changes.md
+    put("splitBackend", HEADLESS_REMOTE_DEV_HOST);
     put("rdserver-headless", HEADLESS);
     put("openUrlOnClient", HEADLESS);
     put("cwmHostStatus", HEADLESS);

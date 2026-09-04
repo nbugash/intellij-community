@@ -15,6 +15,13 @@
         "intellij.platform.buildScripts"
       ],
       "class": "org.jetbrains.intellij.build.AndroidStudioProperties"
+    },
+    "thinClient": {
+      "modules": [
+        "intellij.idea.community.build.thinClient",
+        "intellij.platform.buildScripts"
+      ],
+      "class": "org.jetbrains.intellij.build.thinClient.ThinClientProperties"
     }
   }
 }

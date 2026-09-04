@@ -25,6 +25,7 @@ jvm_library(
         "//platform/remote-topics/frontend",
         "//platform/buildView/frontend",
         "//platform/completion/frontend",
+        "//platform/remoteDev-frontend",
     ],
 )
 
@@ -54,6 +55,7 @@ jvm_library(
         "//platform/remote-topics/frontend:frontend_test_lib",
         "//platform/buildView/frontend:frontend_test_lib",
         "//platform/completion/frontend:frontend_test_lib",
+        "//platform/remoteDev-frontend:remoteDev-frontend_test_lib",
     ],
 )
 ### auto-generated section `build intellij.platform.frontend.main` end

@@ -19,5 +19,6 @@
     <orderEntry type="module" module-name="intellij.platform.rpc.topics.frontend" />
     <orderEntry type="module" module-name="intellij.platform.buildView.frontend" scope="RUNTIME" />
     <orderEntry type="module" module-name="intellij.platform.completion.frontend" scope="RUNTIME" />
+    <orderEntry type="module" module-name="intellij.platform.remoteDev.frontend" scope="RUNTIME" />
   </component>
 </module>
