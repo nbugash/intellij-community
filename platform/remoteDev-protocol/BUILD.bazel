@@ -74,6 +74,7 @@ jvm_library(
 exports_files(
     [
         "intellij.platform.remoteDev.protocol.iml",
+        "resources/intellij.platform.remoteDev.protocol.xml",
         "module-content.yaml",
     ],
     visibility = ["//visibility:public"],

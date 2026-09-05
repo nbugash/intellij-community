@@ -69,8 +69,10 @@ jvm_library(
 exports_files(
     [
         "intellij.platform.remoteDev.frontend.iml",
+        "resources/META-INF/ThinClientPlugin.xml",
         "resources/META-INF/intellij.platform.remoteDev.frontend/product-modules.xml",
         "resources/idea/ThinClientApplicationInfo.xml",
+        "resources/intellij.platform.remoteDev.frontend.xml",
     ],
     visibility = ["//visibility:public"],
 )
