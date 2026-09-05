@@ -20,6 +20,24 @@ on:
         type: string
         default: ''
         required: false
+  # A pull_request run takes its workflow definition from the pull request's own branch, so this
+  # needs no copy on the default branch. A workflow_dispatch does need one, and there is none yet.
+  #
+  # The paths gate keeps a ten minute build off a change that cannot affect it, such as a
+  # specification or a document.
+  pull_request:
+    paths:
+      - 'platform/remoteDev-protocol/**'
+      - 'platform/remoteDev-backend/**'
+      - 'platform/remoteDev-frontend/**'
+      - 'platform/remoteDev-provisioning/**'
+      - 'platform/ijent-agent/**'
+      - 'platform/main/**'
+      - 'build/thin-client/**'
+      - 'thin-client-images/**'
+      - 'thin-client-installers.cmd'
+      - '.github/workflows/ThinClient.yml'
+
   push:
     tags:
       - 'remote-client/*'
