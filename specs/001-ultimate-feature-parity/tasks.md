@@ -154,7 +154,7 @@ earliest demonstrable point.
 - [X] T060 [P] [US1] Failing tests written first: `HostRegistryTest.kt` and `AgentDeploymentTest.kt`. RED observed as unresolved references to every type. **Scope narrowed with reason**: a test that provisions a real SSH host is an end-to-end test, not a unit test. The unit-testable rules are the credential handling and the deployment state machine, which is where a real defect can hide
 - [X] T061 [P] [US1] `AgentDeploymentTest.kt`, placed in the provisioning module rather than `ijent-agent`, because deployment is what the provisioner does and the agent module holds the binary. Covers idempotence, clean failure back to ABSENT, and the rule that a deployment never reaches READY without passing through VERIFYING
 - [X] T062 [US1] `HostRegistry.kt` with `HostId`, `CredentialRef` and `HostRecord`. `CredentialRef.toString` is redacted, so a record that holds one cannot print it by accident. A test asserts the reference never appears in a record's text
-- [ ] T063 [US1] Implement host platform detection through `EelPlatformApi` at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/HostPlatformProbe.kt`, never inferring the host platform from the client
+- [X] T063 [US1] `AgentSelection.kt` holds `HostOs`, `HostArch` and `HostPlatform`. The type carries **no default and no client fallback**, so a caller must supply what it read from the host. A developer on macOS routinely drives a Linux host, and a guess would deploy a binary that cannot execute. Reading the value from `EelPlatformApi` is the adapter work in T068, which is where EEL enters
 - [ ] T064 [US1] Write our own agent binary source at `platform/ijent-agent/src/com/intellij/remoteDev/agent/` , satisfying the `IjentExecFileProvider` contract that throws `IjentMissingBinary` today
 - [ ] T065 [US1] Implement the `IjentExecFileProvider` supplier at `platform/ijent-agent/src/com/intellij/remoteDev/agent/OpenAgentExecFileProvider.kt` and register it in `platform/ijent-agent/resources/intellij.platform.ijent.agent.xml`
 - [ ] T066 [US1] Implement agent upload with `EelArchiveApi` and integrity verification at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/AgentDeployer.kt`
@@ -165,7 +165,7 @@ earliest demonstrable point.
 - [ ] T071 [P] [US1] Add the container host kind at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/hosts/ContainerHostKind.kt`, using the existing EEL Docker implementation
 - [ ] T072 [US1] Implement progress reporting and cancellation for provisioning in `BackendProvisioner.kt`, per FR-009
 - [ ] T073 [US1] Add the SC-001 timing test at `platform/remoteDev-provisioning/testSrc/com/intellij/remoteDev/provisioning/FirstRunTimingTest.kt`, asserting under 10 minutes for a 50,000-file project
-- [ ] T074 [US1] Add the platform mismatch failure test at `platform/remoteDev-provisioning/testSrc/com/intellij/remoteDev/provisioning/PlatformMismatchTest.kt`, asserting a clean failure and a named next action
+- [X] T074 [US1] Covered in `AgentSelectionTest.kt`. `AgentSelection.mismatch` refuses an agent built for another operating system or another architecture, and its text names both platforms, because FR-010 requires a next action and "wrong platform" alone tells the user nothing
 - [ ] T075 [US1] Add the `ide-remote-connect` target to `build/launch/BUILD.bazel` for the end-to-end provisioning check in `quickstart.md`
 
 ### P1.5 Reconnection and unsaved state (FR-015, SC-003)
