@@ -216,6 +216,32 @@ credential. They do not, and cannot, prove authorship. The claim above rests on 
 done, and the record of it is this repository's history and the research decisions in
 `specs/001-ultimate-feature-parity/research.md`.
 
+## What extending ProductProperties costs
+
+Both of this fork's products extend `ProductProperties` and not `JetBrainsProductProperties`,
+because that subclass applies JetBrains branding and FR-002 forbids presenting either product as a
+JetBrains product. The decision is right and it is not free.
+
+That class does more than branding. Its `init` also does this:
+
+```kotlin
+productLayout.addPlatformSpec { layout, _ -> layout.withModule(IJENT_BOOT_CLASSPATH_MODULE, PLATFORM_CORE_NIO_FS) }
+```
+
+That line is what produces `lib/nio-fs.jar`. Every launcher passes
+`-Xbootclasspath/a:$IDE_HOME/lib/nio-fs.jar` whether the jar exists or not, so without it a product
+dies in `System.initPhase3` with `ClassNotFoundException MultiRoutingFileSystemProvider`, before any
+of its own code runs. Declining the branding silently declined the wiring.
+
+Both products now add that spec themselves. The general lesson is worth more than the fix: a base
+class that mixes branding with platform wiring cannot be declined by halves, so anything not
+extending it has to re-derive what it lost, and the only way to find out what that is, is to start
+the product.
+
+Which is the second lesson. Both products passed their licence and secret checks over a built
+distribution, and neither had ever been launched. Four startup defects were sitting in them. An
+artifact check answers "did the build write the right files"; it cannot answer "does this run".
+
 ## Known tensions
 
 `AdminHostPolicy.forProduct` reads administrator settings through the platform's

@@ -109,13 +109,29 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     // green build hides that. The client's build target learned this the same way.
     module("intellij.platform.remoteDev.backend")
     module("intellij.platform.remoteDev.protocol")
-    // MainImpl lives here. Without it the product starts and dies with ClassNotFoundException
-    // com.intellij.idea.MainImpl: essential() does not carry the starter, because a product
-    // normally gets it from its own base fragment.
-    module("intellij.platform.starter")
-    // The product root. product-modules.xml names it as a main root module, which decides what is
-    // loaded; this decides what is packaged. Both are needed and they are not the same list.
-    module("intellij.platform.backend.main")
+    // NOT YET RESOLVED, and the reason it is not is recorded rather than worked around.
+    //
+    // The product needs com.intellij.idea.MainImpl, which lives in intellij.platform.starter, and
+    // essential() does not carry it: a product normally gets the starter from its own base
+    // fragment, the way IdeaCommunityProperties does with intellijCommunityBaseFragment.
+    //
+    // Adding module("intellij.platform.starter") here takes the content set from 20 modules to 282
+    // and the build then exits with code 0 having written no distribution at all: the log stops
+    // after "Generated 20 content blocks", the artifacts directory holds only dependencies.txt, and
+    // nothing reports an error. Adding intellij.platform.backend.main does the same thing.
+    //
+    // So the choice is between a distribution that builds and cannot start, and a build that
+    // silently produces nothing. This takes the first, because a build that reports success and
+    // writes no artifact is the more dangerous failure: it is invisible to every check that reads
+    // the exit code.
+    //
+    // The next step is to find why the content generator stops, not to add more modules to it.
+    // intellij.platform.backend.main is deliberately NOT listed. It is an aggregator whose entries
+    // are all RUNTIME scope, and adding it took the content set from 20 modules to 283 and made the
+    // build exit 0 after "Generated 20 content blocks" having written no distribution at all. A
+    // build that reports success and produces nothing is worse than one that fails, so this stays
+    // out until someone understands why. product-modules.xml still names it as a main root module,
+    // which is what decides loading; this list decides packaging.
   }
 
   /**
