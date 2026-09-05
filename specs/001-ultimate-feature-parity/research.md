@@ -229,6 +229,49 @@ than precede it. Tracked at T021.
 
 ---
 
+## D10. Provisioning: our own contract, and no resident agent
+
+**Decision.** Define our own provisioning contract. Do not write an IJent-compatible agent, and do
+not deploy a resident agent at all for P1.
+
+**Reason for not using IJent.** The launch contract is known: `getIjentGrpcArgv` starts the binary
+with `grpc-server` and flags such as `--address`, `--port` and `--use-tls`. So the agent is a native
+executable that serves gRPC. The service definitions are not in this repository. There is no
+`.proto` for IJent and there are no generated stubs; Community ships the client, the deployer and
+the launch arguments only. Reconstructing the wire protocol from the proprietary agent is what
+FR-001 forbids, so an IJent-compatible agent cannot be written here.
+
+**Reason for no agent at all.** IJent exists so that a local IDE can reach a remote file system and
+run remote processes. Decision D2 put the IDE on the host instead. The backend already runs where
+the project is, so it reads files and starts processes locally. The remote access problem that IJent
+solves does not arise.
+
+What remains is a bootstrap: place the backend on the host, start it, and reach its port. That needs
+no resident process of ours.
+
+**The contract, per host kind.**
+
+| Host kind | Upload and start | Reason |
+|---|---|---|
+| Linux on Windows | The platform execution environment layer | It supports this kind today with no agent of ours |
+| Container | The platform execution environment layer | The same |
+| SSH | A shell session over SSH | The layer's SSH support routes through IJent, which is unavailable, so this kind uses a shell directly |
+
+**Alternatives rejected.**
+
+*Write an IJent-compatible agent.* Blocked by the absent protocol, and prohibited by FR-001 if
+recovered from the binary.
+
+*Use the layer for every host kind.* Its SSH implementation needs the IJent agent, so this would
+leave the SSH host kind unimplemented, and FR-013 requires it.
+
+*Deploy a resident agent of our own design.* It would duplicate what the backend already does on the
+host, and YAGNI in constitution Principle 2 forbids building it before a need exists. If a later
+slice needs richer host access before a backend is running, this decision is the place to revisit.
+
+**Consequence for the task list.** T064 and T065 are withdrawn. The agent module stays as a scaffold
+in case the decision is revisited, and the provisioning module carries the bootstrap contract.
+
 ## D9. Security
 
 **Decision.** Terminate TLS at the backend. Bind the backend to loopback on the host and reach it
