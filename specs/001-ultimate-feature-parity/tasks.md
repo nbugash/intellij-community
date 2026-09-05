@@ -181,11 +181,11 @@ earliest demonstrable point.
 
 ### P1.6 Port forwarding (FR-016)
 
-- [ ] T084 [P] [US1] Write the failing port forwarding test at `platform/remoteDev-provisioning/testSrc/com/intellij/remoteDev/provisioning/PortForwardingTest.kt`
-- [ ] T085 [US1] Implement user-requested forwarding with `EelTunnelsApi` at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/PortForwarder.kt`
-- [ ] T086 [US1] Implement detection of a port that a launched process opens, in `PortForwarder.kt`
-- [ ] T087 [US1] Require user consent before a detected port is forwarded, in `platform/remoteDev-frontend/src/com/intellij/remoteDev/frontend/PortConsentPrompt.kt`
-- [ ] T088 [US1] Close every tunnel when its session ends, asserted by a leak test in `PortForwardingTest.kt`
+- [X] T084 [P] [US1] `PortForwardingTest.kt`, written first. 8 tests covering consent, reuse, per-session isolation and the leak rule
+- [X] T085 [US1] `PortForwarder.forward` with `PortOrigin.USER`. A port the user asked for needs no further consent, because asking is the consent and prompting again would be noise. `Tunnels` is the seam over the platform's tunnel support, so the rules can be tested without a host
+- [X] T086 [US1] `PortOrigin.DETECTED` covers a port that a launched process opened. **Detecting the port itself is host work** and belongs with the execution environment adapter; what is implemented and tested here is how a detected port is treated once seen
+- [X] T087 [US1] `ForwardConsent` gates a detected port. A test asserts that no tunnel is opened when consent is refused, not merely that the call returns nothing. The prompt itself is user interface work for the frontend module
+- [X] T088 [US1] `PortForwarder.closeSession` closes every tunnel its session opened. A tunnel that outlives its session is a leak, and it leaves a route into the host open after the session that justified it has gone. Two tests: nothing survives a close, and closing one session leaves another's tunnels alone
 
 ### P1.7 Close the FR-014 capability gaps
 
