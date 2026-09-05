@@ -5,10 +5,11 @@
   <!-- ApplicationInfo parsing requires these: without an <icon svg=...> the product dies at
        startup with NullPointerException "Missing attribute: //icon@svg", before any of its own code
        runs. A headless host never draws one, and it is still required. -->
-  <icon svg="/remote-client.svg" svg-small="/remote-client_16.svg"/>
-  <icon-eap svg="/remote-client.svg" svg-small="/remote-client_16.svg"/>
+  <icon svg="/remote-backend.svg" svg-small="/remote-backend_16.svg"/>
+  <icon-eap svg="/remote-backend.svg" svg-small="/remote-backend_16.svg"/>
   <build number="RC-__BUILD__" date="__BUILD_DATE__"/>
-  <!-- 'script' must equal ProductProperties.baseFileName. -->
-  <names product="RemoteClient" fullname="Remote Development Client" script="remote-client"
-         motto="A thin client for a remote development host"/>
+  <!-- 'script' must equal ProductProperties.baseFileName, and HostProvisioner.startCommand runs
+       <remoteDirectory>/bin/remote-backend. The three names have to agree or provisioning fails. -->
+  <names product="RemoteBackend" fullname="Remote Development Backend" script="remote-backend"
+         motto="A headless host for a remote development session"/>
 </component>

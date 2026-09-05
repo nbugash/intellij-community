@@ -81,6 +81,9 @@ jvm_library(
 exports_files(
     [
         "intellij.platform.remoteDev.backend.iml",
+        "resources/META-INF/RemoteBackendPlugin.xml",
+        "resources/META-INF/intellij.platform.remoteDev.backend/product-modules.xml",
+        "resources/idea/RemoteBackendApplicationInfo.xml",
         "resources/intellij.platform.remoteDev.backend.xml",
     ],
     visibility = ["//visibility:public"],

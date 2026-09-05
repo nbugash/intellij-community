@@ -1,0 +1,12 @@
+<product-modules>
+  <!--
+    Declared directly rather than included from intellij.platform.backend.main, for the same reason
+    the frontend does it: that module is an aggregator with no product-modules.xml of its own, and
+    an <include> of it fails with MalformedRepositoryException. Listing the roots here needs no
+    upstream change.
+  -->
+  <main-root-modules>
+    <module>intellij.platform.backend.main</module>
+    <module>intellij.platform.remoteDev.backend</module>
+  </main-root-modules>
+</product-modules>

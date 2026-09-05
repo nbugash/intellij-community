@@ -1,6 +1,7 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.intellij.build.thinClient
 
+import com.intellij.platform.ijent.community.buildConstants.IJENT_BOOT_CLASSPATH_MODULE
 import com.intellij.platform.runtime.product.ProductMode
 import kotlinx.collections.immutable.persistentListOf
 import org.jetbrains.intellij.build.ApplicationInfoProperties
@@ -8,6 +9,7 @@ import org.jetbrains.intellij.build.CompatibleBuildRange
 import org.jetbrains.intellij.build.LinuxDistributionCustomizer
 import org.jetbrains.intellij.build.MacDistributionCustomizer
 import org.jetbrains.intellij.build.ProductProperties
+import org.jetbrains.intellij.build.impl.PlatformJarNames.PLATFORM_CORE_NIO_FS
 import org.jetbrains.intellij.build.WindowsDistributionCustomizer
 import org.jetbrains.intellij.build.linuxCustomizer
 import org.jetbrains.intellij.build.macCustomizer
@@ -70,6 +72,28 @@ class ThinClientProperties(communityHome: Path) : ProductProperties() {
     // `sinceUntil` on the layout. There is no slice yet to do it to; slices arrive in P2.
     // `VerifyPluginTargets` is the check that will catch it when there is.
     customCompatibleBuildRange = CompatibleBuildRange.NEWER_WITH_SAME_BASELINE
+
+    // Without this there is no lib/nio-fs.jar, and the launcher's own
+    // -Xbootclasspath/a:$IDE_HOME/lib/nio-fs.jar points at nothing. The product then dies in
+    // System.initPhase3 with ClassNotFoundException MultiRoutingFileSystemProvider, before any of
+    // its own code runs.
+    //
+    // JetBrainsProductProperties does this in its init. This fork does not extend that class,
+    // because it also applies JetBrains branding that FR-002 forbids. The lesson is that the class
+    // mixes branding with platform wiring, so declining the branding silently declined the wiring
+    // too. A distribution that builds is not a distribution that starts, and only launching it
+    // tells the difference.
+    productLayout.addPlatformSpec { layout, _ -> layout.withModule(IJENT_BOOT_CLASSPATH_MODULE, PLATFORM_CORE_NIO_FS) }
+
+    // ModuleBasedProductLoadingStrategy defaults the core plugin descriptor module to
+    // "intellij.frontend.split.customization", which is a JetBrains Client module and is not in
+    // Community. Without this override the product starts, reads its module descriptors, and dies
+    // with "The core plugin header is not found ... by module intellij.frontend.split.customization".
+    //
+    // The module named here is the one carrying this product's plugin descriptor, so it has to stay
+    // in step with rootModuleForModularLoader above.
+    additionalVmOptions = additionalVmOptions.add("-Dintellij.platform.core.plugin.descriptor.module=intellij.platform.remoteDev.frontend")
+
   }
 
   override fun getBaseArtifactName(appInfo: ApplicationInfoProperties, buildNumber: String): String =

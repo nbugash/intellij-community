@@ -1,0 +1,24 @@
+<!--
+  HAND-WRITTEN, and that is a deviation worth knowing about. The same one ThinClientPlugin.xml
+  carries, for the same reason: the generator's Bazel target //platform/buildScripts:plugin-model-tool
+  does not exist in this checkout, the directory being platform/build-scripts with a hyphen.
+
+  This states by hand what the generator would emit from
+  org.jetbrains.intellij.build.remoteBackend.BackendProperties.getProductContentDescriptor().
+
+  RISK: this file and that function can drift apart. Whoever finds the working generator invocation
+  should regenerate this file and delete this comment.
+-->
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+  <id>org.intellij.community.remotedev.backend</id>
+  <name>Remote Development Backend CORE</name>
+
+  <module value="com.intellij.modules.platform"/>
+  <module value="com.intellij.modules.lang"/>
+
+  <xi:include href="/META-INF/intellij.moduleSets.essential.xml"/>
+
+  <content namespace="jetbrains">
+    <module name="intellij.platform.remoteDev.backend"/>
+  </content>
+</idea-plugin>
