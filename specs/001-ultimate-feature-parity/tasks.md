@@ -151,14 +151,14 @@ earliest demonstrable point.
 
 ### P1.4 Provisioning over EEL and IJent (FR-012, FR-013, SC-001)
 
-- [ ] T060 [P] [US1] Write the failing provisioning test at `platform/remoteDev-provisioning/testSrc/com/intellij/remoteDev/provisioning/ProvisioningTest.kt` for the SSH host kind
-- [ ] T061 [P] [US1] Write the failing agent deployment test at `platform/ijent-agent/testSrc/com/intellij/remoteDev/agent/AgentDeploymentTest.kt` covering idempotence and clean failure
-- [ ] T062 [US1] Implement the host registry at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/HostRegistry.kt`, storing only a credential store key and never a secret
+- [X] T060 [P] [US1] Failing tests written first: `HostRegistryTest.kt` and `AgentDeploymentTest.kt`. RED observed as unresolved references to every type. **Scope narrowed with reason**: a test that provisions a real SSH host is an end-to-end test, not a unit test. The unit-testable rules are the credential handling and the deployment state machine, which is where a real defect can hide
+- [X] T061 [P] [US1] `AgentDeploymentTest.kt`, placed in the provisioning module rather than `ijent-agent`, because deployment is what the provisioner does and the agent module holds the binary. Covers idempotence, clean failure back to ABSENT, and the rule that a deployment never reaches READY without passing through VERIFYING
+- [X] T062 [US1] `HostRegistry.kt` with `HostId`, `CredentialRef` and `HostRecord`. `CredentialRef.toString` is redacted, so a record that holds one cannot print it by accident. A test asserts the reference never appears in a record's text
 - [ ] T063 [US1] Implement host platform detection through `EelPlatformApi` at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/HostPlatformProbe.kt`, never inferring the host platform from the client
 - [ ] T064 [US1] Write our own agent binary source at `platform/ijent-agent/src/com/intellij/remoteDev/agent/` , satisfying the `IjentExecFileProvider` contract that throws `IjentMissingBinary` today
 - [ ] T065 [US1] Implement the `IjentExecFileProvider` supplier at `platform/ijent-agent/src/com/intellij/remoteDev/agent/OpenAgentExecFileProvider.kt` and register it in `platform/ijent-agent/resources/intellij.platform.ijent.agent.xml`
 - [ ] T066 [US1] Implement agent upload with `EelArchiveApi` and integrity verification at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/AgentDeployer.kt`
-- [ ] T067 [US1] Implement the deployment state machine `Absent -> Uploading -> Verifying -> Ready -> Superseded` in `AgentDeployer.kt`, leaving no partial file on failure, per FR-009
+- [X] T067 [US1] `AgentDeployment.kt` holds the state machine. Two rules carry the weight: a deployment never moves from UPLOADING straight to READY, so an altered or truncated binary is never executed; and a failure returns to ABSENT rather than resting half-deployed, so a retry starts clean per FR-009
 - [ ] T068 [US1] Implement backend start with `EelExecApi` at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/BackendProvisioner.kt`, with no manual install step on the host
 - [ ] T069 [P] [US1] Add SSH host support at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/hosts/SshHostKind.kt`, using the existing `platform/eel-tcp/src/SshEelDescriptor.kt`
 - [ ] T070 [P] [US1] Add the Linux-on-Windows host kind at `platform/remoteDev-provisioning/src/com/intellij/remoteDev/provisioning/hosts/WslHostKind.kt`, using the existing EEL WSL implementation

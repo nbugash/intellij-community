@@ -107,6 +107,8 @@ jvm_library(
         "@lib//:kotlin-stdlib",
         "//platform/remoteDev-provisioning",
         "//platform/remoteDev-provisioning:remoteDev-provisioning_test_lib",
+        "//platform/remoteDev-protocol",
+        "//platform/remoteDev-protocol:remoteDev-protocol_test_lib",
         "//libraries/junit5",
         "//libraries/junit5:junit5_test_lib",
         "//libraries/junit5-params",
