@@ -215,16 +215,23 @@ for this transport under this load.
 These checks prove FR-001, FR-004, FR-007, FR-008, FR-018, SC-013, SC-014, and SC-015.
 
 ```
-# [P1 CREATES] No secret in any produced artifact
-bazel run //build:scan-artifacts-for-secrets
+# Both checks, over a built distribution: every licence approved, no credential in any shipped file
+./bazel.cmd run //build/thin-client:verify-artifacts -- <path to the built distribution>
 
-# [P1 CREATES] Every distributed third-party component carries a compatible licence
-bazel run //build:validate-licenses
+# Constitution Principle 2, Clean Code. Reports every outlier by name and fails on any
+./bazel.cmd run //build/thin-client:clean-code-gate -- platform/remoteDev-protocol/src \
+  platform/remoteDev-backend/src platform/remoteDev-frontend/src \
+  platform/remoteDev-provisioning/src build/thin-client/src
 ```
 
-Neither target exists today. SC-013 and SC-014 both require an automated check on every build, so
-these are P1 deliverables and not manual reviews. The licence data that the second target needs
-already exists at `platform/build-scripts/licenses/src/CommunityLibraryLicenses.kt`.
+These replace the two targets this document named while they were still planned,
+`//build:scan-artifacts-for-secrets` and `//build:validate-licenses`. Neither was ever created under
+those names. One target does both jobs, because both walk the same distribution and splitting them
+would walk it twice. `LicenseValidator` and `SecretScanner` are the two halves inside it.
+
+The licence check uses an allowed list rather than a denied list, so an unrecognised licence stops
+the build and asks a person. Its data comes from
+`platform/build-scripts/licenses/src/CommunityLibraryLicenses.kt`.
 
 **Expected**:
 
@@ -246,3 +253,26 @@ P1 is complete when every check above passes and the three statements below hold
    applying cleanly or with a documented conflict resolution. FR-054 requires this, and the plan keeps
    the changed platform file count at two to make it achievable.
 3. The thin client builds installers for all six supported operating system and architecture pairs.
+
+
+---
+
+## Record of the run, T115
+
+Run on 2026-09-05, on Linux, against this repository at `feature/personal-customization`.
+
+| Check | Outcome |
+| --- | --- |
+| 0, repository model | **Pass.** Generator, path assertion, and `format.check` all exit 0 |
+| 1, the local split runs | **Not run.** Needs the two-process harness from T022, which is deferred |
+| 2, version negotiation | **Covered by unit tests, not by this check.** `VersionNegotiationTest` (7) and `ContractEvolutionTest` (5) assert the refusal. The check as written wants two running processes, which is T099 |
+| 3, provisioning per host kind | **Not run.** Needs an SSH host, a WSL host, and a container host |
+| 4, session survives an outage | **Covered by unit tests.** `ReconnectionTest` (8) and `SessionReconnectorTest` (8). The end-to-end form is T099 |
+| 5, port forwarding | **Covered by unit tests.** `PortForwardingTest` (8). The end-to-end form needs a host |
+| 6, FR-014 capability matrix | **Not run.** This is T099, and it needs a running session |
+| 7, performance, SC-002 | **Blocked.** Needs the T038 baseline, which needs the T022 harness |
+| 8, security and provenance | **Partly run.** The clean-code gate runs and reports 0 outliers across all five fork modules. `verify-artifacts` needs a built distribution; its last run over one reported 133 components, every licence approved and no credential. The five numbered expectations are covered by unit tests: 202 of them, listed in `test-coverage-map.md` |
+
+The shape of this is worth stating plainly rather than leaving to be inferred. Every check that needs
+only this repository passes. Every check that needs a running session or a remote host has not been
+run, and each names the task that will run it. No check has been run and failed.

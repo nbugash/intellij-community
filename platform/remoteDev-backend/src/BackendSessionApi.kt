@@ -4,6 +4,7 @@ package com.intellij.remoteDev.backend
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.platform.rpc.backend.RemoteApiProvider
 import com.intellij.remoteDev.protocol.ClientOffer
@@ -39,8 +40,20 @@ internal class HostSessionPolicy(
     else -> ProjectAvailability.NOT_FOUND
   }
 
+  /**
+   * Whether this host already has the project at [path] open.
+   *
+   * `getOpenProjects` documents its own contract: a caller that is not inside a read action must
+   * check [Project.isDisposed] on each project before using it. The array is a snapshot, and a
+   * project can be disposed the moment after it is taken.
+   *
+   * The disposal check is used rather than a read action on purpose. This runs on the RPC thread
+   * that is answering a handshake, and taking the read lock there would block that answer behind
+   * any write the host happens to be doing. The platform offers the check as the alternative, so
+   * this takes it.
+   */
   private fun isOpenHere(path: String): Boolean =
-    ProjectManager.getInstance().openProjects.any { it.basePath == path }
+    ProjectManager.getInstance().openProjects.any { !it.isDisposed && it.basePath == path }
 }
 
 /** The host side of [SessionApi]. */

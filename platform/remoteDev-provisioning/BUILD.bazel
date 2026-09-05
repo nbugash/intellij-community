@@ -21,6 +21,10 @@ jvm_library(
     ),
     kotlinc_opts = ":custom_remoteDev-provisioning",
     module_name = "intellij.platform.remoteDev.provisioning",
+    resource_strip_prefix = "resources",
+    resources = glob(
+        ["resources/**/*"],
+    ),
     visibility = ["//visibility:public"],
     deps = [
         # do not sort,

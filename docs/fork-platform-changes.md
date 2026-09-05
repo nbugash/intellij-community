@@ -8,6 +8,10 @@ could not be made in fork-owned code. A change with no row is a review failure.
 
 **Current count of changed upstream source files: 4. Planned: 0.**
 
+Eight tracked files differ from upstream in total. Four are the hand-edited source changes counted
+above. The other four are registry or generator output, listed in the next section, and they are
+excluded because nobody chooses their contents.
+
 Keeping this number small is the main long-term cost control for the fork. Each entry must be
 re-applied, re-tested, and re-argued at every upstream release.
 
@@ -21,6 +25,10 @@ optional, so they are recorded here rather than counted above.
   `build/jps-module.mjs register`.
 - `build/bazel-generated-file-list.txt` ... generator output. `jpsModelToBazelCommunityOnly.cmd`
   rewrites it. Both files already carried uncommitted changes before this work began.
+- `platform/main/intellij.platform.backend.main/BUILD.bazel` and the matching
+  `intellij.platform.frontend.main/BUILD.bazel` ... generator output for the two `.iml` edits that
+  are counted. `jpsModelToBazelCommunityOnly.cmd` writes them. Editing them by hand is a mistake:
+  the next generator run reverts it.
 
 ## Applied changes
 
@@ -78,6 +86,11 @@ optional, so they are recorded here rather than counted above.
   controller session is registered through this public method upstream, not through a private path.
 - **Result**: the count of changed upstream files drops from two to one.
 
+- **Rebase note**: the T112 drill measured 6 upstream commits on this file in twelve months, and
+  none between the fork's base and `idea/2026.3-eap-1`. The change is one entry appended to a map
+  literal, away from the lines upstream edits. The file does not exist before `idea/2026.1`, so a
+  rebase onto anything older is not a conflict but a redesign.
+
 ### 4. `build/dev-build.json` (APPLIED)
 
 - **Task**: T046
@@ -104,6 +117,66 @@ The generator could not be run. Its README names `//platform/buildScripts:plugin
 such package exists: the directory is `platform/build-scripts`, and no `BUILD.bazel` declares that
 target. Each file can drift from the `.iml` it mirrors. Whoever finds the working invocation should
 regenerate all four and delete their warning comments.
+
+## Rebase drill, T112
+
+Run on 2026-09-05 against `idea/2026.3-eap-1`, the newest upstream tag, from a fork based on master
+at `fa9f6fa1e617`.
+
+### The instrument matters
+
+`git merge-tree HEAD idea/2026.3-eap-1` reports 195 conflicting paths. That number is not this
+fork's rebase cost, and quoting it would be wrong. Master and a release branch have diverged on their
+own, and almost every one of those paths is upstream against upstream, in files this fork has never
+touched.
+
+The question SC-017 asks is narrower: do the fork's own platform modifications still apply? So the
+drill merges each changed file on its own, three ways, from the fork's base to the release tag. Eight
+files, eight merges.
+
+### Result
+
+| Release tag | Clean | Conflicting | Not yet present |
+| --- | --- | --- | --- |
+| `idea/2026.3-eap-1` | 8 | 0 | 0 |
+| `idea/2026.2.2` | 8 | 0 | 0 |
+| `idea/2026.2` | 8 | 0 | 0 |
+| `idea/2026.1` | 5 | 2 | 1 |
+| `idea/2025.3` | 3 | 4 | 1 |
+
+No new file this fork adds collides with a path that already exists at the tag, so nothing conflicts
+on addition.
+
+The two older tags are the drill run backwards, onto releases that predate the platform structure
+these changes assume. They are not a forward rebase and they are not a failure. They are here because
+they show which files are fragile once upstream has really moved.
+
+### What the drill found
+
+The fragile files are not the ones churn predicts, and the inversion is the useful part.
+
+`.idea/modules.xml` took 654 upstream commits in twelve months and
+`build/bazel-generated-file-list.txt` took 556, roughly twice a day each. Both merged clean at every
+tag. They are long append-only registries, and this fork's entries sit nowhere near the lines
+upstream keeps editing.
+
+The two `main/BUILD.bazel` files took 12 and 10 commits in the same period, two orders of magnitude
+less, and both conflicted at `idea/2026.1` and at `idea/2025.3`. They are short, and the edit adds a
+dependency inside the one `deps` list upstream also reorders.
+
+So the predictor of rebase pain is where an edit lands, not how often the file changes. A one-line
+addition to the end of a thousand-line registry is nearly free. The same addition inside the only
+list in a forty-line file is not. A future change should be judged that way.
+
+### Against SC-017
+
+SC-017 allows ten working days to rebase onto an upstream release. The three most recent tags need
+zero conflict resolution, and the worst case measured, a backwards rebase across two major releases,
+conflicts in four small files whose resolution is mechanical. The target holds with room to spare.
+
+The result to watch is not the conflict count. It is the count of changed source files, which is 4.
+Each new one adds a permanent re-argue cost at every release, and that is what this ledger exists to
+hold down.
 
 ## Provenance statement
 

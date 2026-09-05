@@ -4,6 +4,7 @@ package org.jetbrains.intellij.build.thinClient
 import com.intellij.platform.runtime.product.ProductMode
 import kotlinx.collections.immutable.persistentListOf
 import org.jetbrains.intellij.build.ApplicationInfoProperties
+import org.jetbrains.intellij.build.CompatibleBuildRange
 import org.jetbrains.intellij.build.LinuxDistributionCustomizer
 import org.jetbrains.intellij.build.MacDistributionCustomizer
 import org.jetbrains.intellij.build.ProductProperties
@@ -50,6 +51,25 @@ class ThinClientProperties(communityHome: Path) : ProductProperties() {
 
     scrambleMainJar = false
     buildCrossPlatformDistribution = false
+
+    // T114, FR-055 and FR-056. A slice loads on any newer build in the same baseline.
+    //
+    // The baseline is the honest boundary. Within one, the platform API is stable enough that a
+    // slice built against any member is expected to work against a later one. Across one it is not,
+    // and a range that spanned baselines would only move the failure from load time to a call site.
+    //
+    // EXACT and RESTRICTED_TO_SAME_RELEASE were the alternatives. Both refuse a build that differs
+    // from the one a slice was made on, which would mean shipping a separate artifact of every
+    // slice for stock Community Edition and for this fork. FR-056 asks for one that works on both.
+    //
+    // This setting is necessary and it is not sufficient, which matters more than the choice.
+    // `PluginXmlPatcher` derives `since-build` from `context.buildNumber`, the number of the IDE
+    // doing the building. A slice built here therefore declares this fork's number, and stock
+    // Community Edition, being older, refuses it. Closing that needs `since-build` to come from the
+    // lower of the two, either by building slices against the stock number or by setting
+    // `sinceUntil` on the layout. There is no slice yet to do it to; slices arrive in P2.
+    // `VerifyPluginTargets` is the check that will catch it when there is.
+    customCompatibleBuildRange = CompatibleBuildRange.NEWER_WITH_SAME_BASELINE
   }
 
   override fun getBaseArtifactName(appInfo: ApplicationInfoProperties, buildNumber: String): String =

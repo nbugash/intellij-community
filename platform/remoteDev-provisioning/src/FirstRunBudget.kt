@@ -2,6 +2,7 @@
 package com.intellij.remoteDev.provisioning
 
 import org.jetbrains.annotations.ApiStatus
+import org.jetbrains.annotations.NonNls
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -71,6 +72,8 @@ object FirstRunBudget {
     return BudgetReport(total, within, overruns, summarise(total, budget.total, missing, overruns))
   }
 
+  /** Diagnostic text for whoever is measuring the budget, not for an end user. Hence [NonNls]. */
+  @NonNls
   private fun summarise(
     total: Duration,
     limit: Duration,

@@ -2,6 +2,7 @@
 package com.intellij.remoteDev.provisioning
 
 import org.jetbrains.annotations.ApiStatus
+import org.jetbrains.annotations.Nls
 
 /** The operating systems a host can run. FR-013 requires SSH, WSL and container hosts, which span these. */
 @ApiStatus.Internal
@@ -41,10 +42,10 @@ object AgentSelection {
    * The text names both platforms, because FR-010 requires a failure to state a next action and
    * "wrong platform" alone tells the user nothing.
    */
+  @Nls
   fun mismatch(agent: HostPlatform, host: HostPlatform): String? =
     if (agent == host) null
-    else "The agent is built for ${describe(agent)}, but the host runs ${describe(host)}. " +
-         "Deploy the agent for ${describe(host)}."
+    else RemoteDevProvisioningBundle.message("agent.platform.mismatch", describe(agent), describe(host))
 
   private fun describe(platform: HostPlatform): String =
     "${platform.os.name.lowercase()} ${platform.arch.name.lowercase()}"

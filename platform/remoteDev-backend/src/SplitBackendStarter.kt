@@ -12,6 +12,7 @@ import com.intellij.openapi.project.ProjectManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.NonNls
 import java.nio.file.Path
 import kotlin.system.exitProcess
 
@@ -93,11 +94,18 @@ internal class SplitBackendStarter : ModernApplicationStarter() {
       .map { Path.of(it.removePrefix(PROJECT_ARGUMENT)) }
       .distinct()
 
-  private fun report(message: String) {
+  /**
+   * Writes to the host's standard error.
+   *
+   * The text is [NonNls] on purpose. This runs on a host terminal, read by whoever started the
+   * backend, and the platform does not localise `ApplicationStarter` console output either. Sending
+   * it through a bundle would translate an operator's diagnostics into the end user's language.
+   */
+  private fun report(message: @NonNls String) {
     System.err.println("[splitBackend] $message")
   }
 
-  private fun abort(message: String): Nothing {
+  private fun abort(message: @NonNls String): Nothing {
     report(message)
     exitProcess(EXIT_BAD_USAGE)
   }
