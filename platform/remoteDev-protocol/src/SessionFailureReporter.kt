@@ -27,6 +27,9 @@ object SessionFailureReporter {
       SessionFailure.SESSION_EXPIRED -> message(refusal, RETENTION_WINDOW_TEXT)
       SessionFailure.AUTH_REJECTED -> message(refusal)
       SessionFailure.BACKEND_NOT_READY -> message(refusal)
+      // The address is not a parameter here. This refusal is decided before the handshake, by
+      // SessionTransportSecurity, and the user is looking at the address they typed.
+      SessionFailure.INSECURE_TRANSPORT -> message(refusal)
     }
 
   private fun message(refusal: HandshakeRefused, vararg params: Any): String =

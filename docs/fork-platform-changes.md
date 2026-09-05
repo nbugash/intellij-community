@@ -107,6 +107,51 @@ regenerate all four and delete their warning comments.
 
 ## Provenance statement
 
-Reserved for T109. Every component in this fork is written from public specifications, public
-documentation, and externally observable behaviour, as FR-001 requires. No component is derived from
-a proprietary distribution.
+Every component in this fork is written from public specifications, public documentation, and the
+source in this repository, as FR-001 requires. No component is derived from a proprietary
+distribution.
+
+In particular, during this work nobody decompiled, disassembled, or read the bytes of a proprietary
+build, and nobody recovered a wire format by watching a proprietary client talk to a proprietary
+host. The session protocol in `platform/remoteDev-protocol` is specified in
+`specs/001-ultimate-feature-parity/contracts/session-protocol.md` and was designed there first. It is
+not a copy of, and does not interoperate with, any proprietary protocol.
+
+Two decisions record the discipline rather than assert it, because a rejected shortcut is better
+evidence than a promise:
+
+`libraries/rd` was rejected. It is available, and it would have saved work. It ships as compiled
+Maven artifacts, and it identifies a version by an exact `serializationHash`, so it can tell that two
+peers disagree but cannot negotiate between them. FR-057 needs negotiation. Research decision D4.
+
+The Lux host was rejected. It is the obvious model for a split host, and it is closed source
+(`com.jetbrains.rdserver.*`). Community ships only the client-side toolkit shims. Reading it was
+never an option, so the backend was designed from the contract instead. Research decision D5.
+
+### What the automated checks do and do not prove
+
+`build/thin-client/src/LicenseValidator.kt` and `SecretScanner.kt` run over the built distribution
+through `//build/thin-client:verify-artifacts`. On the last run they reported 133 components, every
+licence on the allowed list, and no credential in any shipped file.
+
+The licence check uses an allowed list, not a denied list. An unrecognised licence stops the build
+and asks a person, which is why the first real run surfaced five licences the list had missed rather
+than passing them in silence.
+
+These checks prove that the distribution ships nothing under an incompatible licence and no
+credential. They do not, and cannot, prove authorship. The claim above rests on how the work was
+done, and the record of it is this repository's history and the research decisions in
+`specs/001-ultimate-feature-parity/research.md`.
+
+## Known tensions
+
+`AdminHostPolicy.forProduct` reads administrator settings through the platform's
+`OsRegistryConfigProvider`. That class writes its paths as `SOFTWARE\JetBrains\<product>` on
+Windows and `JetBrains/<product>` under `/etc/xdg`, and the segment is not a parameter.
+
+So a de-branded fork reads its administrator configuration from a path carrying the JetBrains name,
+which sits badly with FR-002. The alternatives are worse: changing the platform class would make it
+the fifth upstream file this fork edits, and copying it would duplicate the registry, XDG, and
+Application Support handling for the sake of one path segment.
+
+This is recorded, not resolved. Whoever decides FR-002's exact boundary should decide it here.

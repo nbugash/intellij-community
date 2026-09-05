@@ -131,6 +131,16 @@ this. An opaque failure is a defect.
 
 A refusal never reveals a credential, a token, or a path outside the requested project.
 
+### 6.1 Codes that do not travel
+
+`INSECURE_TRANSPORT` is a failure code, but no peer sends it. The client decides it before the
+handshake, when it looks at the address it is about to connect to. The backend binds the loopback
+address, so a plain text connection from the network never arrives.
+
+The distinction matters for version negotiation. An older peer cannot read a code name it does not
+know, so a code that travels can only be added in a new protocol version. A code that does not
+travel can be added in the same version. `ContractEvolutionTest` holds this rule.
+
 ---
 
 ## 7. Rules that a change to this contract must respect

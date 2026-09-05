@@ -24,4 +24,5 @@ enum class SessionFailure(val messageKey: String, val terminal: Boolean) {
   BACKEND_NOT_READY("session.failure.backend.not.ready", terminal = false),
   SESSION_EXPIRED("session.failure.session.expired", terminal = true),
   TRUST_REQUIRED("session.failure.trust.required", terminal = false),
+  INSECURE_TRANSPORT("session.failure.insecure.transport", terminal = true),
 }

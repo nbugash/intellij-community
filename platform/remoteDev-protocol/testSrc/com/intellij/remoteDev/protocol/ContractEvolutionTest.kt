@@ -13,6 +13,12 @@ import org.junit.jupiter.api.Test
  * user's session.
  */
 class ContractEvolutionTest {
+  /** The codes protocol version 1 puts on the wire. See contract section 6. */
+  private val WIRE_CODES_V1 = setOf(
+    "VERSION_MISMATCH", "PRODUCT_MISMATCH", "AUTH_REJECTED", "PROJECT_NOT_FOUND",
+    "PROJECT_LOCKED", "BACKEND_NOT_READY", "SESSION_EXPIRED", "TRUST_REQUIRED",
+  )
+
   private val lenient = Json { ignoreUnknownKeys = true }
 
   @Test
@@ -30,12 +36,23 @@ class ContractEvolutionTest {
   @Test
   fun `every failure code keeps a stable wire name`() {
     // Rule 4. Removing or renaming a code is a breaking change and needs a new protocol version.
-    val expected = setOf(
-      "VERSION_MISMATCH", "PRODUCT_MISMATCH", "AUTH_REJECTED", "PROJECT_NOT_FOUND",
-      "PROJECT_LOCKED", "BACKEND_NOT_READY", "SESSION_EXPIRED", "TRUST_REQUIRED",
-    )
+    assertTrue(SessionFailure.entries.map { it.name }.containsAll(WIRE_CODES_V1))
+  }
 
-    assertEquals(expected, SessionFailure.entries.map { it.name }.toSet())
+  @Test
+  fun `a code added after version 1 is never sent to a peer`() {
+    // Adding a code is safe only while no peer can receive it. An older peer cannot deserialize a
+    // name it does not know, so a code that travels needs a new protocol version.
+    //
+    // INSECURE_TRANSPORT does not travel. The client decides it locally, before the handshake, and
+    // the backend binds SessionTransportSecurity.BIND_ADDRESS, so a routable plain text connection
+    // never reaches the backend to be refused.
+    //
+    // This test fails for the next code somebody adds. That is the point: it asks whether the new
+    // code goes on the wire, and makes the answer part of the contract.
+    val addedAfterVersion1 = SessionFailure.entries.map { it.name }.toSet() - WIRE_CODES_V1
+
+    assertEquals(setOf("INSECURE_TRANSPORT"), addedAfterVersion1)
   }
 
   @Test
