@@ -123,3 +123,60 @@ jobs:
           retention-days: 7
           path: |
             out/remote-client/artifacts/remoteClient-*
+
+      # build.sh reads every file in its own directory, so the .sit archives and the scripts must
+      # arrive flat and together. Staging them here keeps the macOS job to a download and a run.
+      - name: Stage the macOS disk image inputs
+        shell: bash
+        run: |
+          mkdir -p dmg-inputs
+          cp out/remote-client/artifacts/*.sit dmg-inputs/
+          cp out/remote-client/artifacts/macos-dmg-build/* dmg-inputs/
+          ls -la dmg-inputs/
+
+      - name: Upload the macOS disk image inputs
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: macos-dmg-inputs
+          if-no-files-found: 'error'
+          retention-days: 1
+          path: dmg-inputs/
+
+  # A .dmg cannot be produced off macOS, so the Linux job writes transferable scripts instead and
+  # this job replays them on a macOS runner. The same split exists in ide_build_and_upload.yml.
+  dmg:
+    runs-on: macos-latest
+    needs: build
+    timeout-minutes: 60
+    steps:
+      - name: Download the macOS disk image inputs
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: macos-dmg-inputs
+          path: dmg
+
+      - name: Build the disk images
+        shell: bash
+        run: |
+          cd dmg
+          chmod +x build.sh
+          ./build.sh
+          ls -la ./*.dmg
+
+      - name: Verify a disk image was produced
+        shell: bash
+        run: |
+          count=$(find dmg -maxdepth 1 -name '*.dmg' | wc -l)
+          echo "Disk images found: $count"
+          if [ "$count" -eq 0 ]; then
+            echo "::error::build.sh produced no .dmg."
+            exit 1
+          fi
+
+      - name: Upload the disk images
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: remote-client-dmg
+          if-no-files-found: 'error'
+          retention-days: 7
+          path: dmg/*.dmg
