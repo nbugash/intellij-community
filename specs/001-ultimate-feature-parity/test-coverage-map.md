@@ -53,6 +53,8 @@ Counts are from the run on 2026-09-05: 202 tests across five modules, all passin
 | `FirstRunTimingTest` (6) | The first-run budget |
 | `CredentialStorageTest` (8) | Secrets in the platform store, references in the host record |
 | `AdminHostPolicyTest` (12) | Allowed hosts and the TLS requirement, FR-020 |
+| `SshCommandQuotingTest` (8) | Shell quoting for the remote command. Runs everywhere, no host needed |
+| `SshHostBootstrapTest` (7) | `SshHostBootstrap` against a real SSH host. Skipped unless an identity is named |
 
 ### `intellij.idea.community.build.thinClient` (14)
 
@@ -73,11 +75,23 @@ implementation of a platform interface, or a lambda.
 
 **The right fixture per surface: partly met, and this is the honest gap.**
 
-Every test above is a unit test, because every feature above is domain logic that can be one. That
-is the correct fixture for what it covers, and it is the reason the suite runs in under a second.
+Most tests above are unit tests, because most features above are domain logic that can be one. That
+is the correct fixture for what they cover, and it is the reason the suite runs in under a second.
 
-What has no fixture is every surface that needs a running IDE: opening a real project, an RPC call
-over a real connection, an editor. Those are not untested by oversight; they are the deferred tasks
+`SshHostBootstrapTest` is the exception, and the first integration test in the fork. It runs against
+a real SSH host, uploads a real file, opens a real tunnel, and asserts through it. It is skipped
+unless an identity file is named, so a checkout without a host still builds, and the skip was
+verified rather than assumed: without the property all seven report as skipped and none as failed.
+
+One of its assertions is worth naming. `an argument containing a semicolon does not run on the host`
+is checked against a real shell, and it was confirmed by mutation: with the quoting removed, the
+injected `touch` created its file. A quoting bug is the difference between running a command and
+handing the host to whoever supplied the argument.
+
+What still has no fixture is every surface that needs a running IDE: opening a real project, an RPC
+call over a real connection, an editor. The blocker there is not the harness but the product: no
+entry in `build/dev-build.json` builds a backend, so `SplitBackendStarter` exists and nothing can
+launch it. Those are not untested by oversight; they are the deferred tasks
 T048, T049, T089 through T097, and T099, and each carries its reason where it stands.
 
 The one place the gap is visible inside a passing test is `UntrustedProjectTest`. It runs a real

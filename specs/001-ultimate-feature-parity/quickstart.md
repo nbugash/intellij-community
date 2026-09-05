@@ -266,7 +266,7 @@ Run on 2026-09-05, on Linux, against this repository at `feature/personal-custom
 | 0, repository model | **Pass.** Generator, path assertion, and `format.check` all exit 0 |
 | 1, the local split runs | **Not run.** Needs the two-process harness from T022, which is deferred |
 | 2, version negotiation | **Covered by unit tests, not by this check.** `VersionNegotiationTest` (7) and `ContractEvolutionTest` (5) assert the refusal. The check as written wants two running processes, which is T099 |
-| 3, provisioning per host kind | **Not run.** Needs an SSH host, a WSL host, and a container host |
+| 3, provisioning per host kind | **Partly run, SSH only.** `SshHostBootstrapTest` drives `HostProvisioner` against a real SSH host on loopback: upload, start, forward, all three steps in order. The backend binary it starts is a stub that exits 0, because no product builds a real one, so this proves the provisioner's orchestration and not that a backend starts. WSL and container hosts have no implementation |
 | 4, session survives an outage | **Covered by unit tests.** `ReconnectionTest` (8) and `SessionReconnectorTest` (8). The end-to-end form is T099 |
 | 5, port forwarding | **Covered by unit tests.** `PortForwardingTest` (8). The end-to-end form needs a host |
 | 6, FR-014 capability matrix | **Not run.** This is T099, and it needs a running session |
