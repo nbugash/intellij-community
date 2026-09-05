@@ -15,18 +15,23 @@ import com.intellij.remoteDev.protocol.SessionToken
 import fleet.rpc.remoteApiDescriptor
 import org.jetbrains.annotations.ApiStatus
 import java.util.UUID
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
 
 /**
  * Answers the handshake using the state of this host.
  *
- * Token validation fails closed on purpose. The credential store is wired in P1.8 by T103, and until
- * then no token can be proved valid. Accepting one would be a security hole, so the host refuses
- * with `AUTH_REJECTED` rather than trusting an unverified credential. FR-018 requires a revocable
- * credential, which a permissive default would defeat.
+ * Token validation was fail-closed until T103. It now asks [SessionTokenRegistry], which holds a
+ * digest rather than the token, and which the host owner can revoke at any moment as FR-018
+ * requires. An unknown, revoked or expired token still yields `AUTH_REJECTED`.
  */
 @ApiStatus.Internal
-internal class HostSessionPolicy(private val registry: BackendSessionRegistry) : BackendSessionPolicy {
-  override fun isTokenValid(token: SessionToken): Boolean = false
+internal class HostSessionPolicy(
+  private val registry: BackendSessionRegistry,
+  private val tokens: SessionTokenRegistry,
+  private val now: () -> Duration,
+) : BackendSessionPolicy {
+  override fun isTokenValid(token: SessionToken): Boolean = tokens.validate(token, now()) != null
 
   override fun projectAvailability(path: String): ProjectAvailability = when {
     registry.holdsProject(path) -> ProjectAvailability.LOCKED
@@ -44,15 +49,19 @@ internal class BackendSessionApi : SessionApi {
   override suspend fun handshake(offer: ClientOffer): HandshakeReply = responder().respond(offer)
 
   private fun responder(): HandshakeResponder {
-    val registry = ApplicationManager.getApplication().service<BackendSessionRegistry>()
+    val application = ApplicationManager.getApplication()
+    val registry = application.service<BackendSessionRegistry>()
     return HandshakeResponder(
-      policy = HostSessionPolicy(registry),
+      policy = HostSessionPolicy(registry, application.service<SessionTokenRegistry>(), ::uptime),
       supportedVersions = ProtocolVersions.supported(),
       backendProductVersion = ApplicationInfo.getInstance().build.asString(),
       nextSessionId = { SessionId(UUID.randomUUID().toString()) },
     )
   }
 }
+
+/** A monotonic clock. Wall time would let a clock change extend or shorten a token's life. */
+private fun uptime(): Duration = System.nanoTime().nanoseconds
 
 /** Publishes [SessionApi] to a connected client through the platform RPC layer. */
 @ApiStatus.Internal
