@@ -1,6 +1,9 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.intellij.build.thinClient
 
+import java.nio.file.Files
+import java.nio.file.Path
+
 /** One place a file breaks constitution Principle 2. */
 data class CleanCodeOutlier(val file: String, val line: Int, val rule: String, val detail: String) {
   override fun toString(): String = "$file:$line $rule: $detail"
@@ -179,16 +182,33 @@ object CleanCodeGateMain {
   @JvmStatic
   fun main(args: Array<String>) {
     val roots = args.toList().ifEmpty { error("Give at least one directory to check") }
-    val outliers = roots.flatMap { root -> check(java.nio.file.Path.of(root)) }
+    val outliers = roots.flatMap { check(resolve(it)) }
     outliers.forEach(::println)
     println("${outliers.size} outlier(s) in ${roots.size} root(s)")
     if (outliers.isNotEmpty()) kotlin.system.exitProcess(1)
   }
 
-  private fun check(root: java.nio.file.Path): List<CleanCodeOutlier> =
-    java.nio.file.Files.walk(root).use { paths ->
+  /**
+   * Resolves a root against the workspace, so a relative path works.
+   *
+   * `bazel run` runs the binary from a runfiles directory, not from where the command was typed, so
+   * a relative path resolved against the working directory points nowhere. Bazel sets
+   * `BUILD_WORKSPACE_DIRECTORY` to the workspace root for this. Without it the documented command
+   * threw a stack trace, which is how this was found.
+   */
+  private fun resolve(root: String): Path {
+    val path = Path.of(root)
+    if (path.isAbsolute) return path
+    val workspace = System.getenv("BUILD_WORKSPACE_DIRECTORY") ?: return path.toAbsolutePath()
+    return Path.of(workspace).resolve(path)
+  }
+
+  private fun check(root: Path): List<CleanCodeOutlier> {
+    require(Files.isDirectory(root)) { "Not a directory: $root" }
+    return Files.walk(root).use { paths ->
       paths.filter { it.toString().endsWith(".kt") }
-        .map { CleanCodeGate.check(root.relativize(it).toString(), java.nio.file.Files.readString(it)) }
+        .map { CleanCodeGate.check(root.relativize(it).toString(), Files.readString(it)) }
         .toList().flatten()
     }
+  }
 }
