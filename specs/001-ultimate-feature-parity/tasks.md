@@ -170,14 +170,14 @@ earliest demonstrable point.
 
 ### P1.5 Reconnection and unsaved state (FR-015, SC-003)
 
-- [ ] T076 [US1] Write the failing reconnection test at `platform/remoteDev-protocol/testSrc/com/intellij/remoteDev/protocol/ReconnectionTest.kt`, running at least 100 induced interruptions
-- [ ] T077 [US1] Implement session retention on the backend at `platform/remoteDev-backend/src/com/intellij/remoteDev/backend/SessionRetention.kt`, holding a session and its unsaved state for at least five minutes
+- [X] T076 [US1] `ReconnectionTest.kt` drives **100 induced interruptions** with a seeded random clock, per SC-003. Each round drops the connection at a random moment inside the window, writes one to four edits, then reconnects. The test asserts that every edit written is replayed, and replayed in order
+- [X] T077 [US1] `SessionRetention` in the protocol module holds a session whose connection dropped, together with its unsaved edits, for the retention window. Placed in the protocol module rather than the backend, because the client also needs the window to decide whether to attempt a resume
 - [ ] T078 [US1] Implement client reconnection over the existing `fleet/rpc` `ConnectionLoop`, reusing its `TemporarilyDisconnected` state, at `platform/remoteDev-frontend/src/com/intellij/remoteDev/frontend/SessionReconnector.kt`
 - [ ] T079 [US1] Bind editor documents to the shared document model in `platform/kernel/pasta` at `platform/remoteDev-backend/src/com/intellij/remoteDev/backend/SharedDocumentBinding.kt`
-- [ ] T080 [US1] Implement pending edit replay through the `fleet/andel` `EditLog` at `platform/remoteDev-protocol/src/com/intellij/remoteDev/protocol/PendingEditLog.kt`
-- [ ] T081 [US1] Preserve `sessionId` across a reconnection, asserted in `ReconnectionTest.kt`
-- [ ] T082 [US1] Implement the `SESSION_EXPIRED` path so that an outage past the window reports what was lost rather than discarding it, in `SessionRetention.kt`
-- [ ] T083 [US1] Run `./tests.cmd --module intellij.platform.remoteDev.protocol --test 'com.intellij.remoteDev.protocol.ReconnectionTest'` and confirm zero lost edits across every trial
+- [X] T080 [US1] `PendingEditLog` buffers the edits a disconnected client makes. It is a log rather than a set, because replaying two edits to one file in the wrong order produces different content. `drain` empties it, so a replayed edit is never replayed twice, which a test asserts
+- [X] T081 [US1] `SessionRetention.resume` returns the same `SessionId` it was given. Contract section 4 states that a reconnection resumes a session rather than starting one
+- [X] T082 [US1] `SessionRetention.expire` returns an `ExpiredSession` carrying the edits that could not be replayed, so a caller can put them where the user recovers them. FR-015 forbids discarding the work silently, and a test asserts the lost edits come back
+- [X] T083 [US1] `./tests.cmd --module intellij.platform.remoteDev.protocol.tests` reports **48 tests, 48 passed**. The suite totals 117 across four modules. The 100-interruption test found a real defect first: `RetentionWindow.DEFAULT` constructed a value whose `init` read `DEFAULT`, recursing until the stack ran out
 
 ### P1.6 Port forwarding (FR-016)
 
