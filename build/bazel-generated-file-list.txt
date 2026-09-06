@@ -217,6 +217,7 @@ build
 build/cucumber-test-runner
 build/deps
 build/launch
+build/remote-backend
 build/tasks
 build/tests
 build/thin-client
@@ -966,6 +967,7 @@ platform/remote-topics/frontend
 platform/remote-topics/shared
 platform/remoteDev-backend
 platform/remoteDev-frontend
+platform/remoteDev-host-customization
 platform/remoteDev-protocol
 platform/remoteDev-provisioning
 platform/remoteDev-util
