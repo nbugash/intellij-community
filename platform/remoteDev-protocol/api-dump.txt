@@ -1,0 +1,3 @@
+f:com.intellij.remoteDev.protocol.RemoteDevProtocolBundle
+- sf:INSTANCE:com.intellij.remoteDev.protocol.RemoteDevProtocolBundle
+- f:message(java.lang.String,java.lang.Object[]):java.lang.String

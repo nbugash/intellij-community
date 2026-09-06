@@ -1,0 +1,41 @@
+<!--
+  HAND-WRITTEN, and that is a deviation worth knowing about.
+
+  Every other product plugin descriptor in this repository is generated from Kotlin, from
+  ProductProperties.getProductContentDescriptor(). IdeaPlugin.xml carries a "DO NOT EDIT" header for
+  that reason.
+
+  The generator could not be run here. Its README names the Bazel target
+  //platform/buildScripts:plugin-model-tool, and that package does not exist: the directory is
+  platform/build-scripts, with a hyphen, and no BUILD.bazel declares that target. The IDE run
+  configuration 'Generate Product Layouts' is the only other documented path.
+
+  This file therefore states by hand what the generator would emit from
+  org.jetbrains.intellij.build.thinClient.ThinClientProperties.getProductContentDescriptor(), which
+  returns productModules { moduleSet(CommunityModuleSets.essential()) }.
+
+  RISK: this file and getProductContentDescriptor() can drift apart. Whoever finds the working
+  generator invocation should regenerate this file and delete this comment.
+-->
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+  <!-- The core plugin of a product must be "com.intellij". The loader looks it up by that id
+       and refuses to start without it: "Missing essential plugin: com.intellij". The id names the
+       role, not the vendor, so FR-002 is not at stake. -->
+  <id>com.intellij</id>
+  <name>Remote Development Client CORE</name>
+
+  <module value="com.intellij.modules.platform"/>
+  <module value="com.intellij.modules.lang"/>
+
+  <xi:include href="/META-INF/intellij.moduleSets.essential.xml"/>
+
+  <content namespace="jetbrains">
+    <!-- loading="embedded" is what puts this module's jar on the main class loader.
+         deprecatedLoadCorePluginForModuleBasedLoader looks the core descriptor up as
+         META-INF/${platformPrefix}Plugin.xml on that class loader and returns null when it is not
+         there, and a null core plugin surfaces as "Missing essential plugin: com.intellij".
+         addMainModuleGroupToClassPath only adds modules whose loading rule is EMBEDDED.
+         IdeaPlugin.xml marks its own customization module the same way. -->
+    <module name="intellij.platform.remoteDev.frontend" loading="embedded"/>
+  </content>
+</idea-plugin>

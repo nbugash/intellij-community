@@ -1,0 +1,14 @@
+<component xmlns="http://jetbrains.org/intellij/schema/application-info">
+  <version major="2026" minor="3" eap="true"/>
+  <!-- FR-002 forbids presenting this product as a JetBrains product. The vendor is the fork. -->
+  <company name="IntelliJ Community Remote Development" url="https://github.com/JetBrains/intellij-community"/>
+  <!-- ApplicationInfo parsing requires these: without an <icon svg=...> the product dies at
+       startup with NullPointerException "Missing attribute: //icon@svg", before any of its own code
+       runs. A headless host never draws one, and it is still required. -->
+  <icon svg="/remote-client.svg" svg-small="/remote-client_16.svg"/>
+  <icon-eap svg="/remote-client.svg" svg-small="/remote-client_16.svg"/>
+  <build number="RC-__BUILD__" date="__BUILD_DATE__"/>
+  <!-- 'script' must equal ProductProperties.baseFileName. -->
+  <names product="RemoteClient" fullname="Remote Development Client" script="remote-client"
+         motto="A thin client for a remote development host"/>
+</component>

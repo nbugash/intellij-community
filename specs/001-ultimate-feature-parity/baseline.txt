@@ -1,0 +1,45 @@
+Phase 1 baseline for Remote Development (P1)
+Recorded: 2026-09-04
+Task: T001
+
+HOST
+  total memory      61 GiB
+  cores             16
+  75% ceiling       ~45 GiB   (constitution Principle 3, Resource Ceiling)
+
+TOOLCHAIN
+  bazel             9.1.0-jb_20260505_126, via ./bazel.cmd (bazelisk 1.29.0)
+  java              openjdk 25.0.2 LTS
+  node              present. Used for build/jps-module.mjs
+  bun               the bun on PATH is an opencode wrapper and fails on the script.
+                    Use `node build/jps-module.mjs` instead of the `bun` form in AGENTS.md.
+
+REFERENCE BUILD (existing module, proves the toolchain)
+  //platform/kernel/rpc:rpc                      348 s, exit 0
+
+NEW MODULE BUILD (all five modules, :all target patterns)
+  40 targets                                     270 s, exit 0
+  invocation  ./bazel.cmd build '--local_resources=memory=HOST_RAM*.75' \
+                //platform/remoteDev-protocol:all //platform/remoteDev-backend:all \
+                //platform/remoteDev-frontend:all //platform/remoteDev-provisioning:all \
+                //platform/ijent-agent:all
+  peak memory                                    16% of total, well inside the ceiling
+
+COMPILED OUTPUT VERIFIED
+  remoteDev-protocol.jar contains
+    com/intellij/remoteDev/protocol/RemoteDevProtocolBundle.class
+    messages/RemoteDevProtocolBundle.properties
+
+PRE-EXISTING CONDITIONS AT SESSION START (not caused by this work)
+  Six tracked files already carried uncommitted modifications:
+    .idea/modules.xml
+    build/bazel-generated-file-list.txt
+    platform/execution-process-mediator/common/gradle/wrapper/gradle-wrapper.properties
+    plugins/eclipse/testData/import/.project
+    plugins/kotlin/idea/tests/testData/gradle/configurator/changeFeatureSupportGSKWithXFlag/
+      .gradle/buildOutputCleanup/buildOutputCleanup.lock
+    plugins/kotlin/idea/tests/testData/gradle/configurator/changeFeatureSupportGSKWithXFlag/
+      .gradle/buildOutputCleanup/cache.properties
+  The android modules were absent. ./build/jpsModelToBazelCommunityOnly.cmd could not run until
+  ./getPlugins.sh --shallow was executed. Verified pre-existing by reproducing the same failure
+  with the new module registrations stashed.

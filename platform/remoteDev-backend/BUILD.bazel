@@ -1,0 +1,158 @@
+load("@community//build:tests-options.bzl", "jps_test")
+load("@rules_jvm//:jvm.bzl", "jvm_library")
+load("//build:compiler-options.bzl", "create_kotlinc_options")
+
+### auto-generated section `build intellij.platform.remoteDev.backend` start
+create_kotlinc_options(
+    name = "custom_remoteDev-backend",
+    warn = "error",
+    x_warning_level = ["DEPRECATION:warning"],
+)
+
+jvm_library(
+    name = "remoteDev-backend",
+    srcs = glob(
+        [
+            "src/**/*.kt",
+            "src/**/*.java",
+            "src/**/*.form",
+        ],
+        allow_empty = True,
+    ),
+    kotlinc_opts = ":custom_remoteDev-backend",
+    module_name = "intellij.platform.remoteDev.backend",
+    resource_strip_prefix = "resources",
+    resources = glob(
+        ["resources/**/*"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        # do not sort,
+        "@lib//:kotlin-stdlib",
+        "//libraries/jetbrains/annotations",
+        "//libraries/kotlinx/coroutines/core",
+        "//platform/util",
+        "//platform/core-api:core",
+        "//platform/remoteDev-protocol",
+        "//platform/kernel/rpc",
+        "//platform/kernel/rpc.backend",
+        "//platform/platform-impl:ide-impl",
+        "//platform/ide-core",
+        "//platform/ide-core-impl",
+        "//platform/service-container",
+        "//platform/projectModel-impl",
+        "//platform/projectModel-api:projectModel",
+        "//platform/platform-api:ide",
+    ],
+)
+
+jvm_library(
+    name = "remoteDev-backend_test_lib",
+    testonly = True,
+    srcs = glob(
+        [],
+        allow_empty = True,
+    ),
+    kotlinc_opts = ":custom_remoteDev-backend",
+    module_name = "intellij.platform.remoteDev.backend",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        # do not sort,
+        ":remoteDev-backend",
+        "//libraries/jetbrains/annotations:annotations_test_lib",
+        "//libraries/kotlinx/coroutines/core:core_test_lib",
+        "//platform/util:util_test_lib",
+        "//platform/core-api:core_test_lib",
+        "//platform/remoteDev-protocol:remoteDev-protocol_test_lib",
+        "//platform/kernel/rpc:rpc_test_lib",
+        "//platform/kernel/rpc.backend:rpc.backend_test_lib",
+        "//platform/platform-impl:ide-impl_test_lib",
+        "//platform/ide-core:ide-core_test_lib",
+        "//platform/ide-core-impl:ide-core-impl_test_lib",
+        "//platform/service-container:service-container_test_lib",
+        "//platform/projectModel-impl:projectModel-impl_test_lib",
+        "//platform/projectModel-api:projectModel_test_lib",
+        "//platform/platform-api:ide_test_lib",
+    ],
+)
+### auto-generated section `build intellij.platform.remoteDev.backend` end
+
+### auto-generated section `iml intellij.platform.remoteDev.backend` start
+exports_files(
+    [
+        "intellij.platform.remoteDev.backend.iml",
+        "resources/META-INF/intellij.platform.remoteDev.backend/product-modules.xml",
+        "resources/intellij.platform.remoteDev.backend.xml",
+    ],
+    visibility = ["//visibility:public"],
+)
+### auto-generated section `iml intellij.platform.remoteDev.backend` end
+
+### auto-generated section `build intellij.platform.remoteDev.backend.tests` start
+create_kotlinc_options(
+    name = "custom_remoteDev-backend-tests",
+    warn = "error",
+    x_warning_level = ["DEPRECATION:warning"],
+)
+
+jvm_library(
+    name = "remoteDev-backend-tests",
+    srcs = glob(
+        [],
+        allow_empty = True,
+    ),
+    module_name = "intellij.platform.remoteDev.backend.tests",
+    visibility = ["//visibility:public"],
+)
+
+jvm_library(
+    name = "remoteDev-backend-tests_test_lib",
+    testonly = True,
+    srcs = glob(
+        [
+            "testSrc/**/*.kt",
+            "testSrc/**/*.java",
+            "testSrc/**/*.form",
+        ],
+        allow_empty = True,
+    ),
+    kotlinc_opts = ":custom_remoteDev-backend-tests",
+    module_name = "intellij.platform.remoteDev.backend.tests",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":remoteDev-backend-tests"],
+    deps = [
+        # do not sort,
+        "@lib//:kotlin-stdlib",
+        "//platform/remoteDev-backend",
+        "//platform/remoteDev-backend:remoteDev-backend_test_lib",
+        "//platform/remoteDev-protocol",
+        "//platform/remoteDev-protocol:remoteDev-protocol_test_lib",
+        "//libraries/junit5",
+        "//libraries/junit5:junit5_test_lib",
+        "//libraries/junit5-params",
+        "//libraries/junit5-params:junit5-params_test_lib",
+        "//platform/testFramework/junit5",
+        "//platform/testFramework/junit5:junit5_test_lib",
+        "//platform/util",
+        "//platform/util:util_test_lib",
+        "//platform/core-api:core",
+        "//platform/core-api:core_test_lib",
+    ],
+)
+### auto-generated section `build intellij.platform.remoteDev.backend.tests` end
+
+### auto-generated section `iml intellij.platform.remoteDev.backend.tests` start
+exports_files(
+    [
+        "intellij.platform.remoteDev.backend.tests.iml",
+    ],
+    visibility = ["//visibility:public"],
+)
+### auto-generated section `iml intellij.platform.remoteDev.backend.tests` end
+
+### auto-generated section `test intellij.platform.remoteDev.backend.tests` start
+jps_test(
+    name = "remoteDev-backend-tests_test",
+    runtime_deps = [":remoteDev-backend-tests_test_lib"],
+)
+### auto-generated section `test intellij.platform.remoteDev.backend.tests` end

@@ -1,0 +1,182 @@
+name: Remote Development Client
+
+# Builds the thin client installers.
+#
+# This workflow does not reuse .github/workflows/ide_build_and_upload.yml on purpose. That workflow
+# checks out JetBrains/android at ${{github.ref}}, which only resolves when this repository's branch
+# name also exists in that repository. A feature branch does not, so the checkout fails before any
+# build starts. Here the reference is an input, and it defaults to master.
+
+on:
+  workflow_dispatch:
+    inputs:
+      android_ref:
+        description: 'Branch of JetBrains/android to check out'
+        type: string
+        default: 'master'
+        required: false
+      target_os:
+        description: 'Leave empty for Linux and macOS. Or one of: current, linux, mac, windows, all'
+        type: string
+        default: ''
+        required: false
+  # A pull_request run takes its workflow definition from the pull request's own branch, so this
+  # needs no copy on the default branch. A workflow_dispatch does need one, and there is none yet.
+  #
+  # The paths gate keeps a ten minute build off a change that cannot affect it, such as a
+  # specification or a document.
+  pull_request:
+    paths:
+      - 'platform/remoteDev-protocol/**'
+      - 'platform/remoteDev-backend/**'
+      - 'platform/remoteDev-frontend/**'
+      - 'platform/remoteDev-provisioning/**'
+      - 'platform/ijent-agent/**'
+      - 'platform/main/**'
+      - 'build/thin-client/**'
+      - 'thin-client-images/**'
+      - 'thin-client-installers.cmd'
+      - '.github/workflows/ThinClient.yml'
+
+  push:
+    tags:
+      - 'remote-client/*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      # The IDE build needs far more disk and memory than a hosted runner offers by default. Both
+      # steps mirror .github/actions/build_ide, where they exist because the build hits exit 137.
+      - name: Free disk space
+        shell: bash
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/share/swift /usr/share/miniconda \
+            /usr/local/lib/android /usr/local/share/boost /usr/local/share/powershell \
+            /usr/local/share/chromium /usr/local/lib/node_modules /opt/ghc /opt/microsoft \
+            /opt/google /imagegeneration /var/cache/apt/archives \
+            /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby /opt/hostedtoolcache/PyPy \
+            /opt/hostedtoolcache/go /opt/hostedtoolcache/node
+          sudo apt-get -y clean
+          docker image prune --all --force || true
+          df -h /
+
+      - name: Expand swap
+        shell: bash
+        run: |
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile /swapfile
+          sudo fallocate -l 30G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          free -h
+
+      # intellij.gradle.analysis depends on intellij.android.gradle.dsl. Without this checkout the
+      # Bazel model generation stops with "Cannot resolve module intellij.android.gradle.dsl".
+      - name: Checkout JetBrains/android
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: JetBrains/android
+          path: android
+          ref: ${{ inputs.android_ref || 'master' }}
+
+      # With no target_os the build defaults to Linux and macOS. A Windows installer needs NSIS and
+      # a Windows launcher that this fork has never exercised, so it is opt in.
+      - name: Build the thin client
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.target_os }}" ]; then
+            ./thin-client-installers.cmd -Dintellij.build.target.os=${{ inputs.target_os }}
+          else
+            ./thin-client-installers.cmd
+          fi
+
+      # thin-client-installers.cmd exits 0 even when the build fails. It did so on ten consecutive
+      # failures during development. Without this step a broken build reports success and uploads
+      # nothing. Fail on an empty artifacts directory instead.
+      - name: Verify the build produced artifacts
+        shell: bash
+        run: |
+          dir="out/remote-client/artifacts"
+          if [ ! -d "$dir" ]; then
+            echo "::error::No artifacts directory at $dir. The build failed."
+            exit 1
+          fi
+          count=$(find "$dir" -maxdepth 1 -name 'remoteClient-*' ! -name '*.sha*' ! -name '*.json' | wc -l)
+          echo "Artifacts found: $count"
+          find "$dir" -maxdepth 1 -type f -printf '  %f (%s bytes)\n'
+          if [ "$count" -eq 0 ]; then
+            echo "::error::The artifacts directory holds no installer. The build failed silently."
+            exit 1
+          fi
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: remote-client-installers
+          if-no-files-found: 'error'
+          retention-days: 7
+          path: |
+            out/remote-client/artifacts/remoteClient-*
+
+      # build.sh reads every file in its own directory, so the .sit archives and the scripts must
+      # arrive flat and together. Staging them here keeps the macOS job to a download and a run.
+      - name: Stage the macOS disk image inputs
+        shell: bash
+        run: |
+          mkdir -p dmg-inputs
+          cp out/remote-client/artifacts/*.sit dmg-inputs/
+          cp out/remote-client/artifacts/macos-dmg-build/* dmg-inputs/
+          ls -la dmg-inputs/
+
+      - name: Upload the macOS disk image inputs
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: macos-dmg-inputs
+          if-no-files-found: 'error'
+          retention-days: 1
+          path: dmg-inputs/
+
+  # A .dmg cannot be produced off macOS, so the Linux job writes transferable scripts instead and
+  # this job replays them on a macOS runner. The same split exists in ide_build_and_upload.yml.
+  dmg:
+    runs-on: macos-latest
+    needs: build
+    timeout-minutes: 60
+    steps:
+      - name: Download the macOS disk image inputs
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: macos-dmg-inputs
+          path: dmg
+
+      - name: Build the disk images
+        shell: bash
+        run: |
+          cd dmg
+          chmod +x build.sh
+          ./build.sh
+          ls -la ./*.dmg
+
+      - name: Verify a disk image was produced
+        shell: bash
+        run: |
+          count=$(find dmg -maxdepth 1 -name '*.dmg' | wc -l)
+          echo "Disk images found: $count"
+          if [ "$count" -eq 0 ]; then
+            echo "::error::build.sh produced no .dmg."
+            exit 1
+          fi
+
+      - name: Upload the disk images
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: remote-client-dmg
+          if-no-files-found: 'error'
+          retention-days: 7
+          path: dmg/*.dmg

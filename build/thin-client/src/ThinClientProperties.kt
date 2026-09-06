@@ -1,0 +1,148 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.intellij.build.thinClient
+
+import com.intellij.platform.ijent.community.buildConstants.IJENT_BOOT_CLASSPATH_MODULE
+import com.intellij.platform.runtime.product.ProductMode
+import kotlinx.collections.immutable.persistentListOf
+import org.jetbrains.intellij.build.ApplicationInfoProperties
+import org.jetbrains.intellij.build.CompatibleBuildRange
+import org.jetbrains.intellij.build.LinuxDistributionCustomizer
+import org.jetbrains.intellij.build.MacDistributionCustomizer
+import org.jetbrains.intellij.build.ProductProperties
+import org.jetbrains.intellij.build.impl.PlatformJarNames.PLATFORM_CORE_NIO_FS
+import org.jetbrains.intellij.build.WindowsDistributionCustomizer
+import org.jetbrains.intellij.build.linuxCustomizer
+import org.jetbrains.intellij.build.macCustomizer
+import org.jetbrains.intellij.build.productLayout.CommunityModuleSets
+import org.jetbrains.intellij.build.productLayout.ProductModulesContentSpec
+import org.jetbrains.intellij.build.productLayout.productModules
+import org.jetbrains.intellij.build.windowsCustomizer
+import java.nio.file.Path
+
+/**
+ * The thin client of the open remote development fork.
+ *
+ * It extends [ProductProperties] rather than `JetBrainsProductProperties`, because that subclass
+ * applies JetBrains branding and FR-002 forbids presenting this product as a JetBrains product.
+ *
+ * It lives in its own module rather than in `intellij.idea.community.build`, so that adding it needs
+ * no change to an upstream file. Constraint C2 keeps the count of changed upstream files low, and
+ * the PyCharm product does the same thing from `python/build`.
+ *
+ * The client runs in [ProductMode.FRONTEND]. It holds no project source: the backend indexes,
+ * analyses and executes, and this product renders the state it is sent.
+ */
+class ThinClientProperties(communityHome: Path) : ProductProperties() {
+  override val baseFileName: String = "remote-client"
+
+  init {
+    platformPrefix = "ThinClient"
+    applicationInfoModule = "intellij.platform.remoteDev.frontend"
+    imagesDirectoryPath = communityHome.resolve("thin-client-images")
+
+    productMode = ProductMode.FRONTEND
+    // The loader reads META-INF/<root module>/product-modules.xml from the root module's sources.
+    // Pointing this at the upstream intellij.platform.frontend.main would mean adding a resource to
+    // an upstream module. Our own module is the root instead, and its product-modules.xml includes
+    // the platform frontend content. Constraint C2 keeps upstream changes to what is unavoidable.
+    rootModuleForModularLoader = "intellij.platform.remoteDev.frontend"
+
+    // A modular-loader product declares its content in product-modules.xml, so this stays empty.
+    productLayout.bundledPluginModules = persistentListOf()
+    productLayout.skipUnresolvedContentModules = true
+
+    scrambleMainJar = false
+    buildCrossPlatformDistribution = false
+
+    // T114, FR-055 and FR-056. A slice loads on any newer build in the same baseline.
+    //
+    // The baseline is the honest boundary. Within one, the platform API is stable enough that a
+    // slice built against any member is expected to work against a later one. Across one it is not,
+    // and a range that spanned baselines would only move the failure from load time to a call site.
+    //
+    // EXACT and RESTRICTED_TO_SAME_RELEASE were the alternatives. Both refuse a build that differs
+    // from the one a slice was made on, which would mean shipping a separate artifact of every
+    // slice for stock Community Edition and for this fork. FR-056 asks for one that works on both.
+    //
+    // This setting is necessary and it is not sufficient, which matters more than the choice.
+    // `PluginXmlPatcher` derives `since-build` from `context.buildNumber`, the number of the IDE
+    // doing the building. A slice built here therefore declares this fork's number, and stock
+    // Community Edition, being older, refuses it. Closing that needs `since-build` to come from the
+    // lower of the two, either by building slices against the stock number or by setting
+    // `sinceUntil` on the layout. There is no slice yet to do it to; slices arrive in P2.
+    // `VerifyPluginTargets` is the check that will catch it when there is.
+    customCompatibleBuildRange = CompatibleBuildRange.NEWER_WITH_SAME_BASELINE
+
+    // Without this there is no lib/nio-fs.jar, and the launcher's own
+    // -Xbootclasspath/a:$IDE_HOME/lib/nio-fs.jar points at nothing. The product then dies in
+    // System.initPhase3 with ClassNotFoundException MultiRoutingFileSystemProvider, before any of
+    // its own code runs.
+    //
+    // JetBrainsProductProperties does this in its init. This fork does not extend that class,
+    // because it also applies JetBrains branding that FR-002 forbids. The lesson is that the class
+    // mixes branding with platform wiring, so declining the branding silently declined the wiring
+    // too. A distribution that builds is not a distribution that starts, and only launching it
+    // tells the difference.
+    productLayout.addPlatformSpec { layout, _ -> layout.withModule(IJENT_BOOT_CLASSPATH_MODULE, PLATFORM_CORE_NIO_FS) }
+
+    // ModuleBasedProductLoadingStrategy defaults the core plugin descriptor module to
+    // "intellij.frontend.split.customization", which is a JetBrains Client module and is not in
+    // Community. Without this override the product starts, reads its module descriptors, and dies
+    // with "The core plugin header is not found ... by module intellij.frontend.split.customization".
+    //
+    // The module named here is the one carrying this product's plugin descriptor, so it has to stay
+    // in step with rootModuleForModularLoader above.
+    additionalVmOptions = additionalVmOptions.add("-Dintellij.platform.core.plugin.descriptor.module=intellij.platform.remoteDev.frontend")
+
+  }
+
+  override fun getBaseArtifactName(appInfo: ApplicationInfoProperties, buildNumber: String): String =
+    "remoteClient-$buildNumber"
+
+  /**
+   * The default is the product's full name in lower case, which for this product carries spaces.
+   * A build writes to this directory and a continuous integration job globs inside it, so a space
+   * invites a quoting mistake in a shell step.
+   */
+  override fun getOutputDirectoryName(appInfo: ApplicationInfoProperties): String = "remote-client"
+
+  /**
+   * The default selector is the product's full name plus the version, and this product's full name
+   * carries spaces. A selector names the configuration and caches directory, so a space in it is
+   * rejected. The name is compressed rather than the full name shortened, because the full name is
+   * what a user sees.
+   */
+  override fun getSystemSelector(appInfo: ApplicationInfoProperties, buildNumber: String): String =
+    "RemoteClient${appInfo.majorVersion}.${appInfo.minorVersionMainPart}"
+
+  override fun getProductContentDescriptor(): ProductModulesContentSpec = productModules {
+    moduleSet(CommunityModuleSets.essential())
+    // Without this the product is the platform frontend with none of this fork's code in it. The
+    // first successful build shipped 277 library jars and not this one, which a green build hides.
+    // embeddedModule, not module. The build writes the loading rule into
+    // modules/module-descriptors.dat, and addMainModuleGroupToClassPath puts a module's jar on the
+    // main class loader only when that rule is EMBEDDED. The core descriptor is looked up as
+    // META-INF/${platformPrefix}Plugin.xml on that class loader, and a miss returns null, which
+    // surfaces as "Missing essential plugin: com.intellij". Packaging the jar into lib/ is not
+    // enough; the descriptor has to be reachable from that class loader.
+    embeddedModule("intellij.platform.remoteDev.frontend")
+    module("intellij.platform.remoteDev.protocol")
+  }
+
+  override fun createWindowsCustomizer(projectHome: Path): WindowsDistributionCustomizer =
+    windowsCustomizer(projectHome) {
+      fullName { "Remote Development Client" }
+      installDirNameHandler { "Remote Development Client" }
+    }
+
+  override fun createLinuxCustomizer(projectHome: Path): LinuxDistributionCustomizer =
+    linuxCustomizer(projectHome) {
+      rootDirectoryName { _, _ -> "remote-client" }
+    }
+
+  override fun createMacCustomizer(projectHome: Path): MacDistributionCustomizer =
+    macCustomizer(projectHome) {
+      bundleIdentifier = "org.intellij.community.remotedev.client"
+      rootDirectoryName { _, _ -> "Remote Development Client.app" }
+    }
+}

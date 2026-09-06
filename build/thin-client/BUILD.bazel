@@ -1,0 +1,158 @@
+load("@community//build:tests-options.bzl", "jps_test")
+load("@jps_dynamic_deps_community//:targets.bzl", "ALL_COMMUNITY_TARGETS", "BAZEL_TARGETS_JSON_COMMUNITY")
+load("@rules_java//java:defs.bzl", "java_binary")
+load("@rules_jvm//:jvm.bzl", "jvm_library")
+load("//build:intellij_dev.bzl", "INTELLIJ_ADD_OPENS")
+
+# Hand-written, outside every auto-generated section. Follows python/build/BUILD.bazel.
+# Not named 'installers': that name triggers elevation on Windows.
+java_binary(
+    name = "i_build_target",
+    add_opens = INTELLIJ_ADD_OPENS,
+    data = ALL_COMMUNITY_TARGETS + [BAZEL_TARGETS_JSON_COMMUNITY],
+    jvm_flags = [
+        "-Dintellij.build.bazel.targets.json.file=$(rlocationpath %s)" % BAZEL_TARGETS_JSON_COMMUNITY,
+    ],
+    main_class = "org.jetbrains.intellij.build.thinClient.ThinClientInstallersBuildTarget",
+    runtime_deps = [":thin-client"],
+)
+
+# SC-013 and SC-014. Verifies what a build produced: every licence is approved, and no produced file
+# holds a credential. Hand-written, outside every auto-generated section.
+java_binary(
+    name = "verify-artifacts",
+    main_class = "org.jetbrains.intellij.build.thinClient.VerifyArtifacts",
+    runtime_deps = [":thin-client"],
+)
+
+# Constitution Principle 2, Clean Code. Task T123. Reports outliers by name and fails on any.
+# Hand-written, outside every auto-generated section.
+java_binary(
+    name = "clean-code-gate",
+    main_class = "org.jetbrains.intellij.build.thinClient.CleanCodeGateMain",
+    runtime_deps = [":thin-client"],
+)
+
+### auto-generated section `build intellij.idea.community.build.thinClient` start
+jvm_library(
+    name = "thin-client",
+    srcs = glob(
+        [
+            "src/**/*.kt",
+            "src/**/*.java",
+            "src/**/*.form",
+        ],
+        allow_empty = True,
+    ),
+    module_name = "intellij.idea.community.build.thinClient",
+    visibility = ["//visibility:public"],
+    deps = [
+        # do not sort,
+        "@lib//:kotlin-stdlib",
+        "//libraries/kotlinx/coroutines/core",
+        "//libraries/kotlinx/serialization/core",
+        "//libraries/kotlinx/serialization/json",
+        "//libraries/jetbrains/annotations",
+        "//platform/core-api:core",
+        "//platform/ijent/buildConstants",
+        "//platform/build-scripts",
+        "//platform/build-scripts/downloader",
+        "//platform/runtime/product",
+        "//libraries/kotlinx/collections-immutable:libraries-kotlinx-collections-immutable",
+    ],
+)
+
+jvm_library(
+    name = "thin-client_test_lib",
+    testonly = True,
+    srcs = glob(
+        [],
+        allow_empty = True,
+    ),
+    module_name = "intellij.idea.community.build.thinClient",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        # do not sort,
+        ":thin-client",
+        "//libraries/kotlinx/coroutines/core:core_test_lib",
+        "//libraries/kotlinx/serialization/core:core_test_lib",
+        "//libraries/kotlinx/serialization/json:json_test_lib",
+        "//libraries/jetbrains/annotations:annotations_test_lib",
+        "//platform/core-api:core_test_lib",
+        "//platform/ijent/buildConstants:buildConstants_test_lib",
+        "//platform/build-scripts:build-scripts_test_lib",
+        "//platform/build-scripts/downloader:downloader_test_lib",
+        "//platform/runtime/product:product_test_lib",
+        "//libraries/kotlinx/collections-immutable:libraries-kotlinx-collections-immutable_test_lib",
+    ],
+)
+### auto-generated section `build intellij.idea.community.build.thinClient` end
+
+### auto-generated section `iml intellij.idea.community.build.thinClient` start
+exports_files(
+    [
+        "intellij.idea.community.build.thinClient.iml",
+    ],
+    visibility = ["//visibility:public"],
+)
+### auto-generated section `iml intellij.idea.community.build.thinClient` end
+
+### auto-generated section `build intellij.idea.community.build.thinClient.tests` start
+jvm_library(
+    name = "thinClient-tests",
+    srcs = glob(
+        [],
+        allow_empty = True,
+    ),
+    module_name = "intellij.idea.community.build.thinClient.tests",
+    visibility = ["//visibility:public"],
+)
+
+jvm_library(
+    name = "thinClient-tests_test_lib",
+    testonly = True,
+    srcs = glob(
+        [
+            "testSrc/**/*.kt",
+            "testSrc/**/*.java",
+            "testSrc/**/*.form",
+        ],
+        allow_empty = True,
+    ),
+    module_name = "intellij.idea.community.build.thinClient.tests",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":thinClient-tests"],
+    deps = [
+        # do not sort,
+        "@lib//:kotlin-stdlib",
+        "//build/thin-client",
+        "//build/thin-client:thin-client_test_lib",
+        "//libraries/jetbrains/annotations",
+        "//libraries/jetbrains/annotations:annotations_test_lib",
+        "//platform/core-api:core",
+        "//platform/core-api:core_test_lib",
+        "//libraries/junit5",
+        "//libraries/junit5:junit5_test_lib",
+        "//libraries/junit5-params",
+        "//libraries/junit5-params:junit5-params_test_lib",
+        "//platform/testFramework/junit5",
+        "//platform/testFramework/junit5:junit5_test_lib",
+    ],
+)
+### auto-generated section `build intellij.idea.community.build.thinClient.tests` end
+
+### auto-generated section `iml intellij.idea.community.build.thinClient.tests` start
+exports_files(
+    [
+        "intellij.idea.community.build.thinClient.tests.iml",
+    ],
+    visibility = ["//visibility:public"],
+)
+### auto-generated section `iml intellij.idea.community.build.thinClient.tests` end
+
+### auto-generated section `test intellij.idea.community.build.thinClient.tests` start
+jps_test(
+    name = "thinClient-tests_test",
+    runtime_deps = [":thinClient-tests_test_lib"],
+)
+### auto-generated section `test intellij.idea.community.build.thinClient.tests` end

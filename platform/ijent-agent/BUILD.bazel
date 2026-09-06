@@ -1,0 +1,66 @@
+load("@rules_jvm//:jvm.bzl", "jvm_library")
+load("//build:compiler-options.bzl", "create_kotlinc_options")
+
+### auto-generated section `build intellij.platform.ijent.agent` start
+create_kotlinc_options(
+    name = "custom_ijent-agent",
+    warn = "error",
+    x_warning_level = ["DEPRECATION:warning"],
+)
+
+jvm_library(
+    name = "ijent-agent",
+    srcs = glob(
+        [
+            "src/**/*.kt",
+            "src/**/*.java",
+            "src/**/*.form",
+        ],
+        allow_empty = True,
+    ),
+    kotlinc_opts = ":custom_ijent-agent",
+    module_name = "intellij.platform.ijent.agent",
+    visibility = ["//visibility:public"],
+    deps = [
+        # do not sort,
+        "@lib//:kotlin-stdlib",
+        "//libraries/jetbrains/annotations",
+        "//libraries/kotlinx/coroutines/core",
+        "//platform/util",
+        "//platform/core-api:core",
+        "//platform/ijent",
+        "//platform/eel",
+    ],
+)
+
+jvm_library(
+    name = "ijent-agent_test_lib",
+    testonly = True,
+    srcs = glob(
+        [],
+        allow_empty = True,
+    ),
+    kotlinc_opts = ":custom_ijent-agent",
+    module_name = "intellij.platform.ijent.agent",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        # do not sort,
+        ":ijent-agent",
+        "//libraries/jetbrains/annotations:annotations_test_lib",
+        "//libraries/kotlinx/coroutines/core:core_test_lib",
+        "//platform/util:util_test_lib",
+        "//platform/core-api:core_test_lib",
+        "//platform/ijent:ijent_test_lib",
+        "//platform/eel:eel_test_lib",
+    ],
+)
+### auto-generated section `build intellij.platform.ijent.agent` end
+
+### auto-generated section `iml intellij.platform.ijent.agent` start
+exports_files(
+    [
+        "intellij.platform.ijent.agent.iml",
+    ],
+    visibility = ["//visibility:public"],
+)
+### auto-generated section `iml intellij.platform.ijent.agent` end

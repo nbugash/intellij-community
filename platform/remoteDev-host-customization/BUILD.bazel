@@ -1,0 +1,50 @@
+load("@rules_jvm//:jvm.bzl", "jvm_library")
+
+### auto-generated section `build intellij.platform.remoteDev.host.customization` start
+jvm_library(
+    name = "remoteDev-host-customization",
+    srcs = glob(
+        [
+            "src/**/*.kt",
+            "src/**/*.java",
+            "src/**/*.form",
+        ],
+        allow_empty = True,
+    ),
+    module_name = "intellij.platform.remoteDev.host.customization",
+    resource_strip_prefix = "resources",
+    resources = glob(
+        ["resources/**/*"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = ["//platform/remoteDev-backend"],
+)
+
+jvm_library(
+    name = "remoteDev-host-customization_test_lib",
+    testonly = True,
+    srcs = glob(
+        [],
+        allow_empty = True,
+    ),
+    module_name = "intellij.platform.remoteDev.host.customization",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        # do not sort,
+        ":remoteDev-host-customization",
+        "//platform/remoteDev-backend:remoteDev-backend_test_lib",
+    ],
+)
+### auto-generated section `build intellij.platform.remoteDev.host.customization` end
+
+### auto-generated section `iml intellij.platform.remoteDev.host.customization` start
+exports_files(
+    [
+        "intellij.platform.remoteDev.host.customization.iml",
+        "resources/META-INF/RemoteBackendPlugin.xml",
+        "resources/idea/RemoteBackendApplicationInfo.xml",
+        "resources/intellij.platform.remoteDev.host.customization.xml",
+    ],
+    visibility = ["//visibility:public"],
+)
+### auto-generated section `iml intellij.platform.remoteDev.host.customization` end
