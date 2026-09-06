@@ -47,7 +47,30 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     applicationInfoModule = "intellij.platform.remoteDev.backend"
     imagesDirectoryPath = communityHome.resolve("thin-client-images")
 
-    productMode = ProductMode.BACKEND
+    // MONOLITH, and not BACKEND, which is what this product actually is. The reason is a hard
+    // constraint and it is worth reading before anyone changes it back.
+    //
+    // ProductPluginInitContext treats every mode except MONOLITH and LANGUAGE_SERVER as one that
+    // requires the remote development plugin, which makes BACKEND
+    // demand com.jetbrains.remoteDevelopment as a plugin the product refuses to start
+    // without. That plugin is proprietary, Community does not ship it, and there is nothing this
+    // fork may legitimately put in its place: publishing something under that id would be
+    // impersonating a JetBrains plugin. FR-052 forbids depending on it and FR-002 forbids
+    // pretending to be it, so BACKEND is closed to this fork at runtime.
+    //
+    // LANGUAGE_SERVER is documented as "a variant of BACKEND mode, but without the remote
+    // development connection" and escapes the same check, but it is closed at build time:
+    // ProductModeLoadingRules.getIncompatibleRootModules handles FRONTEND, MONOLITH and BACKEND and
+    // throws AssertionError on anything else. It is a runtime mode the build path cannot express.
+    //
+    // That leaves MONOLITH, and it costs less than it looks. getIncompatibleRootModules returns the
+    // same list for MONOLITH and for BACKEND, with the comment "currently we use the same modules in
+    // 'backend' and 'monolith' modes", so the two produce the same content today. What is lost is
+    // the declaration of intent, not the content.
+    //
+    // This is worth revisiting when either changes: if the platform ever splits those module lists,
+    // this product starts shipping UI modules a host does not need.
+    productMode = ProductMode.MONOLITH
     // The loader reads META-INF/<root module>/product-modules.xml from the root module's sources.
     // Pointing this at the upstream intellij.platform.backend.main would mean adding a resource to
     // an upstream module. Our own module is the root instead, and its product-modules.xml lists the
@@ -119,7 +142,13 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     moduleSet(CommunityModuleSets.essential())
     // Without these the product is the platform backend with none of this fork's code in it, and a
     // green build hides that. The client's build target learned this the same way.
-    module("intellij.platform.remoteDev.backend")
+    // embeddedModule, not module. The build writes the loading rule into
+    // modules/module-descriptors.dat, and addMainModuleGroupToClassPath puts a module's jar on the
+    // main class loader only when that rule is EMBEDDED. The core descriptor is looked up as
+    // META-INF/${platformPrefix}Plugin.xml on that class loader, and a miss returns null, which
+    // surfaces as "Missing essential plugin: com.intellij". Packaging the jar into lib/ is not
+    // enough; the descriptor has to be reachable from that class loader.
+    embeddedModule("intellij.platform.remoteDev.backend")
     module("intellij.platform.remoteDev.protocol")
 
     // intellij.platform.backend.main is deliberately NOT listed. It is an aggregator whose entries

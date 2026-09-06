@@ -119,7 +119,13 @@ class ThinClientProperties(communityHome: Path) : ProductProperties() {
     moduleSet(CommunityModuleSets.essential())
     // Without this the product is the platform frontend with none of this fork's code in it. The
     // first successful build shipped 277 library jars and not this one, which a green build hides.
-    module("intellij.platform.remoteDev.frontend")
+    // embeddedModule, not module. The build writes the loading rule into
+    // modules/module-descriptors.dat, and addMainModuleGroupToClassPath puts a module's jar on the
+    // main class loader only when that rule is EMBEDDED. The core descriptor is looked up as
+    // META-INF/${platformPrefix}Plugin.xml on that class loader, and a miss returns null, which
+    // surfaces as "Missing essential plugin: com.intellij". Packaging the jar into lib/ is not
+    // enough; the descriptor has to be reachable from that class loader.
+    embeddedModule("intellij.platform.remoteDev.frontend")
     module("intellij.platform.remoteDev.protocol")
   }
 

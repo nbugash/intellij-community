@@ -268,6 +268,42 @@ conclusion. Check the exit code of the thing you are running, not of the pipelin
 The actual defect was ordinary: `intellij.platform.starter` carries no descriptor XML, so it is not
 a content module. It belongs in the platform layout, and that is where it now goes.
 
+## ProductMode.BACKEND is closed to this fork
+
+The host product runs in `ProductMode.MONOLITH`, which is not what it is. The reason is a hard
+constraint and it should be understood before anyone changes it back.
+
+`ProductPluginInitContext` treats every mode except `MONOLITH` and `LANGUAGE_SERVER` as one that
+requires the remote development plugin, so `BACKEND` makes `com.jetbrains.remoteDevelopment` a
+plugin the product refuses to start without. That plugin is proprietary and Community does not ship
+it. A backend built in that mode dies with:
+
+```
+Missing essential plugins:
+  com.intellij
+  com.jetbrains.remoteDevelopment
+```
+
+There is nothing this fork may legitimately supply in its place. Publishing something under that id
+would be impersonating a JetBrains plugin, which FR-002 forbids as squarely as FR-052 forbids
+depending on the real one. So the mode that names what this product is cannot be used by anything
+outside JetBrains.
+
+`LANGUAGE_SERVER` is documented as "a variant of BACKEND mode, but without the remote development
+connection", which describes this product well, and it escapes the same check. It is closed for a
+different reason: `ProductModeLoadingRules.getIncompatibleRootModules` handles `FRONTEND`,
+`MONOLITH` and `BACKEND` and throws `AssertionError` on anything else. It is a runtime mode the
+build path cannot express.
+
+That leaves `MONOLITH`, and it costs less than it appears. `getIncompatibleRootModules` returns the
+same list for `MONOLITH` and `BACKEND`, under the comment "currently we use the same modules in
+'backend' and 'monolith' modes", so the two produce the same content today. What is lost is the
+declaration of intent rather than the content.
+
+Worth revisiting if the platform ever splits those lists, because this product would then start
+shipping UI modules a host does not need. It is recorded here rather than in a code comment alone
+because it is the first case found where a platform mode is reachable only by JetBrains.
+
 ## Known tensions
 
 `AdminHostPolicy.forProduct` reads administrator settings through the platform's
