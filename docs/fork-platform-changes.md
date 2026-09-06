@@ -239,8 +239,34 @@ extending it has to re-derive what it lost, and the only way to find out what th
 the product.
 
 Which is the second lesson. Both products passed their licence and secret checks over a built
-distribution, and neither had ever been launched. Four startup defects were sitting in them. An
+distribution, and neither had ever been launched. Five startup defects were sitting in them. An
 artifact check answers "did the build write the right files"; it cannot answer "does this run".
+
+### A correction, and the third lesson
+
+An earlier commit in this work recorded that adding `intellij.platform.starter` made the build "exit
+0 having written no distribution, with no error anywhere", and reasoned at length about that being
+a dangerous silent success.
+
+There was no silent success. The build was failing with exit code 1 and printing a full stack trace,
+every time:
+
+```
+java.lang.IllegalArgumentException: Cannot find file intellij.platform.starter.xml
+  in module intellij.platform.starter
+  at ContentModuleEmbeddingKt.resolveContentModuleDescriptor(contentModuleEmbedding.kt:314)
+```
+
+The exit code was hidden by piping the build through `tail`, which reports its own exit status and
+not the command's, and the trace was truncated by the same pipe. A second run lost its output
+because it was backgrounded with a bare `&` inside a tool invocation and died with the shell.
+
+So the lesson is not about the build. It is that a diagnosis is only as good as the measurement
+under it, and two measurement mistakes produced a confident, wrong, and thoroughly documented
+conclusion. Check the exit code of the thing you are running, not of the pipeline you wrapped it in.
+
+The actual defect was ordinary: `intellij.platform.starter` carries no descriptor XML, so it is not
+a content module. It belongs in the platform layout, and that is where it now goes.
 
 ## Known tensions
 

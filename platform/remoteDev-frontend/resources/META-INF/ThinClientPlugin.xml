@@ -18,7 +18,10 @@
   generator invocation should regenerate this file and delete this comment.
 -->
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
-  <id>org.intellij.community.remotedev.client</id>
+  <!-- The core plugin of a product must be "com.intellij". The loader looks it up by that id
+       and refuses to start without it: "Missing essential plugin: com.intellij". The id names the
+       role, not the vendor, so FR-002 is not at stake. -->
+  <id>com.intellij</id>
   <name>Remote Development Client CORE</name>
 
   <module value="com.intellij.modules.platform"/>

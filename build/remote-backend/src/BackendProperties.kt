@@ -77,6 +77,18 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     // tells the difference.
     productLayout.addPlatformSpec { layout, _ -> layout.withModule(IJENT_BOOT_CLASSPATH_MODULE, PLATFORM_CORE_NIO_FS) }
 
+    // com.intellij.idea.MainImpl lives in intellij.platform.starter, and
+    // CommunityModuleSets.essential() does not carry it: a product normally gets the starter from
+    // its own base fragment, the way IdeaCommunityProperties does through
+    // intellijCommunityBaseFragment. Without it the product starts and dies with
+    // ClassNotFoundException com.intellij.idea.MainImpl.
+    //
+    // It goes in the platform layout and not in getProductContentDescriptor(). A content module has
+    // to carry a descriptor XML named after itself, and the starter has none, so listing it there
+    // fails the build with "Cannot find file intellij.platform.starter.xml in module
+    // intellij.platform.starter". It is platform code, not a content module.
+    productLayout.addPlatformSpec { layout, _ -> layout.withModule("intellij.platform.starter") }
+
     // ModuleBasedProductLoadingStrategy defaults the core plugin descriptor module to
     // "intellij.frontend.split.customization", which is a JetBrains Client module and is not in
     // Community. Without this override the product starts, reads its module descriptors, and dies
@@ -109,23 +121,7 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     // green build hides that. The client's build target learned this the same way.
     module("intellij.platform.remoteDev.backend")
     module("intellij.platform.remoteDev.protocol")
-    // NOT YET RESOLVED, and the reason it is not is recorded rather than worked around.
-    //
-    // The product needs com.intellij.idea.MainImpl, which lives in intellij.platform.starter, and
-    // essential() does not carry it: a product normally gets the starter from its own base
-    // fragment, the way IdeaCommunityProperties does with intellijCommunityBaseFragment.
-    //
-    // Adding module("intellij.platform.starter") here takes the content set from 20 modules to 282
-    // and the build then exits with code 0 having written no distribution at all: the log stops
-    // after "Generated 20 content blocks", the artifacts directory holds only dependencies.txt, and
-    // nothing reports an error. Adding intellij.platform.backend.main does the same thing.
-    //
-    // So the choice is between a distribution that builds and cannot start, and a build that
-    // silently produces nothing. This takes the first, because a build that reports success and
-    // writes no artifact is the more dangerous failure: it is invisible to every check that reads
-    // the exit code.
-    //
-    // The next step is to find why the content generator stops, not to add more modules to it.
+
     // intellij.platform.backend.main is deliberately NOT listed. It is an aggregator whose entries
     // are all RUNTIME scope, and adding it took the content set from 20 modules to 283 and made the
     // build exit 0 after "Generated 20 content blocks" having written no distribution at all. A
