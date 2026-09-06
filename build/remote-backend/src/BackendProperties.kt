@@ -44,7 +44,7 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
 
   init {
     platformPrefix = "RemoteBackend"
-    applicationInfoModule = "intellij.platform.remoteDev.backend"
+    applicationInfoModule = "intellij.platform.remoteDev.host.customization"
     imagesDirectoryPath = communityHome.resolve("thin-client-images")
 
     // MONOLITH, and not BACKEND, which is what this product actually is. The reason is a hard
@@ -119,7 +119,7 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     //
     // The module named here is the one carrying this product's plugin descriptor, so it has to stay
     // in step with rootModuleForModularLoader above.
-    additionalVmOptions = additionalVmOptions.add("-Dintellij.platform.core.plugin.descriptor.module=intellij.platform.remoteDev.backend")
+    additionalVmOptions = additionalVmOptions.add("-Dintellij.platform.core.plugin.descriptor.module=intellij.platform.remoteDev.host.customization")
 
   }
 
@@ -149,6 +149,13 @@ class BackendProperties(communityHome: Path) : ProductProperties() {
     // surfaces as "Missing essential plugin: com.intellij". Packaging the jar into lib/ is not
     // enough; the descriptor has to be reachable from that class loader.
     embeddedModule("intellij.platform.remoteDev.backend")
+    // Carries META-INF/RemoteBackendPlugin.xml, the core descriptor, and the application info.
+    // It is a module of its own because addMainModuleGroupToClassPath adds the classpath of a
+    // header's *included* modules and never the descriptor module itself, so a descriptor that
+    // lives in the module it describes has no way onto the class loader that looks it up.
+    // IdeaPlugin.xml has the same shape: it sits in community-resources and embeds a different
+    // module.
+    embeddedModule("intellij.platform.remoteDev.host.customization")
     module("intellij.platform.remoteDev.protocol")
 
     // intellij.platform.backend.main is deliberately NOT listed. It is an aggregator whose entries

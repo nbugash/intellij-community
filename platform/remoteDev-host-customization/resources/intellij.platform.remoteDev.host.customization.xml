@@ -1,0 +1,8 @@
+<idea-plugin visibility="public">
+  <!-- Hand-written, as in the other fork modules. A content module must carry a descriptor named
+       after itself, or the build fails with "Cannot find file <module>.xml in module <module>".
+       Keep in step with intellij.platform.remoteDev.host.customization.iml. -->
+  <dependencies>
+    <module name="intellij.platform.remoteDev.backend"/>
+  </dependencies>
+</idea-plugin>

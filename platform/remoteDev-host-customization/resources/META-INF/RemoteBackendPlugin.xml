@@ -29,5 +29,6 @@
          addMainModuleGroupToClassPath only adds modules whose loading rule is EMBEDDED.
          IdeaPlugin.xml marks its own customization module the same way. -->
     <module name="intellij.platform.remoteDev.backend" loading="embedded"/>
+    <module name="intellij.platform.remoteDev.host.customization" loading="embedded"/>
   </content>
 </idea-plugin>

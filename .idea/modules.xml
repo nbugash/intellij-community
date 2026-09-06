@@ -1740,6 +1740,7 @@
       <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-backend/intellij.platform.remoteDev.backend.tests.iml" filepath="$PROJECT_DIR$/platform/remoteDev-backend/intellij.platform.remoteDev.backend.tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-frontend/intellij.platform.remoteDev.frontend.iml" filepath="$PROJECT_DIR$/platform/remoteDev-frontend/intellij.platform.remoteDev.frontend.iml" />
       <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-frontend/intellij.platform.remoteDev.frontend.tests.iml" filepath="$PROJECT_DIR$/platform/remoteDev-frontend/intellij.platform.remoteDev.frontend.tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-host-customization/intellij.platform.remoteDev.host.customization.iml" filepath="$PROJECT_DIR$/platform/remoteDev-host-customization/intellij.platform.remoteDev.host.customization.iml" />
       <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-protocol/intellij.platform.remoteDev.protocol.iml" filepath="$PROJECT_DIR$/platform/remoteDev-protocol/intellij.platform.remoteDev.protocol.iml" />
       <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-protocol/intellij.platform.remoteDev.protocol.tests.iml" filepath="$PROJECT_DIR$/platform/remoteDev-protocol/intellij.platform.remoteDev.protocol.tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/platform/remoteDev-provisioning/intellij.platform.remoteDev.provisioning.iml" filepath="$PROJECT_DIR$/platform/remoteDev-provisioning/intellij.platform.remoteDev.provisioning.iml" />
